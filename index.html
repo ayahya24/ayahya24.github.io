@@ -105,6 +105,12 @@ function initialize()
 	window.addEventListener('mouseup', ()=>{
 		onMouseUp();
 	});
+	window.addEventListener('touchstart', ()=>{
+		onMouseDown();
+	});
+	window.addEventListener('touchend', ()=>{
+		onMouseUp();
+	});
 	
 	////////////////////////////////////////////////////////////
 	// setup arToolkitContext
