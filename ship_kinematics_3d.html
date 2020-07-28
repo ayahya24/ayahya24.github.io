@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<title>Hello, AR Cube!</title>
+	<!-- include three.js library -->
+	<script src='js/three.js'></script>
+	<!-- include jsartookit -->
+	<script src="jsartoolkit5/artoolkit.min.js"></script>
+	<script src="jsartoolkit5/artoolkit.api.js"></script>
+	<!-- include threex.artoolkit -->
+	<script src="threex/threex-artoolkitsource.js"></script>
+	<script src="threex/threex-artoolkitcontext.js"></script>
+	<script src="threex/threex-arbasecontrols.js"></script>
+	<script src="threex/threex-armarkercontrols.js"></script>
+</head>
+
+<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
+
+<!-- 
+  Example created by Lee Stemkoski: https://github.com/stemkoski
+  Based on the AR.js library and examples created by Jerome Etienne: https://github.com/jeromeetienne/AR.js/
+-->
+
+<script>
+
+var scene, camera, renderer, clock, deltaTime, totalTime;
+
+var texLoader;
+
+var arToolkitSource, arToolkitContext;
+
+var markerRoot1, markerRoot2;
+
+var ground, mesh1;
+
+var pressed;
+
+var height;
+var vel;
+var g = .98/60;
+
+initialize();
+animate();
+
+function initialize()
+{
+	texLoader = new THREE.TextureLoader();
+
+	scene = new THREE.Scene();
+
+	let ambientLight = new THREE.AmbientLight( 0xcccccc, 0.5 );
+	scene.add( ambientLight );
+				
+	camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+	scene.add(camera);
+
+	renderer = new THREE.WebGLRenderer({
+		antialias : true,
+		alpha: true
+	});
+	renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.domElement.style.position = 'absolute'
+	renderer.domElement.style.top = '0px'
+	renderer.domElement.style.left = '0px'
+	document.body.appendChild( renderer.domElement );
+
+	clock = new THREE.Clock();
+	deltaTime = 0;
+	totalTime = 0;
+	
+
+	function onMouseDown() {
+		pressed = true;
+	}
+
+	function onMouseUp() {
+		pressed = false;
+	}
+
+
+	// handle resize event
+	window.addEventListener('resize', function(){
+		onResize()
+	});
+	window.addEventListener('mousedown', ()=>{
+		onMouseDown();
+	});
+	window.addEventListener('mouseup', ()=>{
+		onMouseUp();
+	});
+	window.addEventListener('touchstart', ()=>{
+		onMouseDown();
+	});
+	window.addEventListener('touchend', ()=>{
+		onMouseUp();
+	});
+	
+
+	////////////////////////////////////////////////////////////
+	// setup markerRoots
+	////////////////////////////////////////////////////////////
+
+	camera.position.z = 3;
+	camera.position.y = 1.5;
+
+	// build markerControls
+	markerRoot1 = new THREE.Group();
+	//markerRoot1.position.z = -5;
+	scene.add(markerRoot1);
+	/*let markerControls1 = new THREEx.ArMarkerControls(arToolkitContext, markerRoot1, {
+		type: 'pattern', patternUrl: "data/hiro.patt",
+	})*/
+
+	let geometry1	= new THREE.CubeGeometry(1,1,1);
+	let material1	= new THREE.MeshNormalMaterial({
+		transparent: true,
+		opacity: 0.5,
+		side: THREE.DoubleSide
+	}); 
+
+	height = 0.1;
+	vel = 0;
+	
+	mesh1 = new THREE.Mesh( geometry1, material1 );
+	mesh1.scale.set(0.2, 0.2, 0.2);
+	console.log(mesh1.scale);
+	mesh1.position.y = height;
+	
+	markerRoot1.add( mesh1 );
+
+	let groundGeom = new THREE.PlaneGeometry(50, 50);
+	texLoader.load('images/checkerboard-pattern2.jpg', (texture)=>{
+		let groundMat = new THREE.MeshBasicMaterial({
+			map:texture
+		});
+		ground = new THREE.Mesh(groundGeom, groundMat);
+		ground.rotateOnAxis(new THREE.Vector3(1, 0, 0), -3.141/2);
+		markerRoot1.add(ground);
+		console.log('Added the boy');
+	}, undefined, (err)=>{
+		console.error('Goofed up while loading ground texture');
+	});
+
+
+}
+
+
+function update()
+{
+	// update artoolkit on every frame
+	/*if ( arToolkitSource.ready !== false )
+		arToolkitContext.update( arToolkitSource.domElement );*/
+	
+	if(pressed) {
+		height += 0.05;
+		vel = 0;
+	}
+	else {
+		vel -= g;
+		height += vel;
+		if(height < 0.1) {
+			height = 0.1;
+			vel = 0;
+		}
+	}
+
+	//console.log('Y: ' + height + ", V: " + vel);
+
+	mesh1.position.y = height;	
+}
+
+
+function render()
+{
+	renderer.render( scene, camera );
+}
+
+
+function animate()
+{
+	requestAnimationFrame(animate);
+	deltaTime = clock.getDelta();
+	totalTime += deltaTime;
+	update();
+	render();
+}
+
+</script>
+
+</body>
+</html>
