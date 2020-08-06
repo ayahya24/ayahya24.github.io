@@ -43,6 +43,7 @@ var g = 9.8;
 var duration = 240;
 
 var meshscale = 0.2;
+var heightOffset = 0;
 
 var x, y, vi, vj, theta;
 
@@ -197,7 +198,7 @@ function initialize()
 
 	camControls.update();
 
-	var sun = new THREE.DirectionalLight(0x4f4f4f, 0.5);
+	var sun = new THREE.DirectionalLight(0x4f4f4f, 3);
 	sun.target.position.set(-5, 0, -3);
 	scene.add(sun);
 	scene.add(sun.target);
@@ -207,7 +208,7 @@ function initialize()
 		this.height = 1;
 		this.distance = 1;
 		this.time = 0;
-		this.playing = false;
+		this.playing = true;
 	}
 	////////////////////////////////////
 	//Simulation values;
@@ -226,7 +227,7 @@ function initialize()
 		this.height = 1;
 		this.distance = 1;
 		this.time = 0;
-		this.playing = false;
+		this.playing = true;
 	}
 
 	gui = new dat.GUI();
@@ -239,16 +240,32 @@ function initialize()
 	////////////////////////////////////////////
 	// load models
 	///////////////////////////////////////////
+	//Cannon Ball
 	modelLoader = new OBJLoader();
 	modelLoader.load('models/cannonball.obj', (object)=>{
-		console.log('Cannonball mesh: '+Object.keys(object));
-		console.log(object.children[0]);
+		//console.log('Cannonball mesh: '+Object.keys(object));
+		//console.log(object.children[0]);
 		mesh1.geometry = object.children[0].geometry;
-		let grayMat = new THREE.MeshStandardMaterial({color:0xFFFFFF});
+		let grayMat = new THREE.MeshStandardMaterial({color:0x353535});
 		mesh1.material = grayMat;
 
 	}, (xhr)=>{}, (error)=>{
 		console.log('error!: '+error);
+	});
+	//Cannon
+	modelLoader.load('models/cannon.obj', (object)=>{
+		let cannon = object.children[0];
+		console.log(cannon);
+		cannon.scale.set(meshscale*2, meshscale*2, meshscale*2);
+		cannon.position.set(0, meshscale, 0);
+		cannon.rotateY(3.1415/2);
+		texLoader.load('images/cannonpalette.png', (texture)=>{
+			console.log(texture);
+			texture.magFilter = THREE.NearestFilter;
+			let cannonMat = new THREE.MeshStandardMaterial({map: texture, roughness:0.75, metalness:0.15});
+			cannon.material = cannonMat;
+			markerRoot1.add(cannon);
+		}, undefined, (err)=>{console.log('Goofed when loading cannon texture')});
 	});
 }
 
@@ -259,7 +276,7 @@ function simulateMaxHeightIndependent() {
 	vi = guiControls.distance / duration;
 	theta = Math.atan(vj/vi);
 	x = vi*t;
-	y = -g/2*Math.pow(t, 2) + vj*t + meshscale;
+	y = -g/2*Math.pow(t, 2) + vj*t + meshscale + heightOffset;
 	if(y<meshscale)
 		y = meshscale;
 	if(x>guiControls.distance)
