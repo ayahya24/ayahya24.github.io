@@ -6,6 +6,7 @@
 	<!--<script src='js/three.js'></script>-->
 	<!-- include jsartookit -->
 	<!--<script src="js/controls/OrbitControls.js"></script>-->
+	<script src = 'build/dat.gui.js'></script>
 </head>
 
 <body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
@@ -18,16 +19,15 @@
 <script type='module'>
 import * as THREE from './build/three.module.js';
 import {OrbitControls} from './js/controls/OrbitControls.js';
+import {OBJLoader} from './js/OBJLoader2.js';
 
 var scene, camera, renderer, clock, deltaTime, totalTime;
 
-var texLoader;
+var guiControls, gui;
 
-var arToolkitSource, arToolkitContext;
+var texLoader, modelLoader;
 
-var markerRoot1, markerRoot2;
-
-var ground, mesh1;
+var ground, mesh1, markerRoot1;
 
 var pressed, mouseDeltaX, mouseDeltaY;
 
@@ -40,6 +40,11 @@ var camX, camY;
 var height;
 var vel;
 var g = .98/60;
+var duration = 240;
+
+var meshscale = 0.2;
+
+var x, y, vi, vj, theta;
 
 initialize();
 animate();
@@ -82,7 +87,7 @@ function initialize()
 
 	camControls = new OrbitControls(camera, renderer.domElement);
 	camControls.enableDamping = true;
-	camControls.maxDistance = 250;
+	camControls.maxDistance = 20;
 	camControls.maxPolarAngle = 3.1415/2-0.03;
 
 	function onMouseDown() {
@@ -159,10 +164,10 @@ function initialize()
 	vel = 0;
 	
 	mesh1 = new THREE.Mesh( geometry1, material1 );
-	mesh1.scale.set(0.4, 0.4, 0.4);
+	mesh1.scale.set(meshscale*2, meshscale*2, meshscale*2);
 	console.log(mesh1.scale);
 	mesh1.position.y = height;
-	
+
 	markerRoot1.add( mesh1 );
 
 	let groundGeom = new THREE.PlaneGeometry(100, 100);
@@ -183,27 +188,93 @@ function initialize()
 	});
 
 	camControls.update();
+
+	guiControls = new function() {
+		this.height = 1;
+		this.distance = 1;
+		this.time = 0;
+		this.playing = false;
+	}
+
+	//Simulation values;
+	x = 0;
+	y = 0;
+	vi = 0;
+	vj = 0;
+	theta = 0;
+	simulateMaxHeightIndependent();
+
+	//Set up GUI with dat.GUI
+
+	guiControls = new function() {
+		this.height = 1;
+		this.distance = 1;
+		this.time = 0;
+		this.playing = false;
+	}
+
+	gui = new dat.GUI();
+	gui.add(guiControls, 'height', 0.2, 4.5);
+	gui.add(guiControls, 'distance', 0, 4.5);
+	gui.add(guiControls, 'time', 0, duration);
+	gui.add(guiControls, 'playing');
+	console.log('max: '+gui.__controllers[2].max);
+
+	////////////////////////////////////////////
+	// load models
+	///////////////////////////////////////////
+	modelLoader = new OBJLoader();
+	modelLoader.load('models/cannonball.obj', (object)=>{
+		console.log('Cannonball mesh: '+Object.keys(object));
+		console.log(object.children[0]);
+		mesh1.geometry = object.children[0].geometry;
+
+	}, (xhr)=>{}, (error)=>{
+		console.log('error!: '+error);
+	});
 }
 
+function simulateMaxHeightIndependent() {
+	let t = guiControls.time;
+	vj = Math.sqrt(2*g*guiControls.height);
+	duration = 2*vj/g;
+	vi = guiControls.distance / duration;
+	theta = Math.atan(vj/vi);
+	x = vi*t;
+	y = -g/2*Math.pow(t, 2) + vj*t;
+	if(y<meshscale)
+		y = meshscale;
+	if(x>guiControls.distance)
+		x = guiControls.distance;
+}
+
+function updateGui() {
+	gui.__controllers[2].max(duration);
+}
 
 function update()
 {
 	if(spacePressed) {
-		height += 0.05;
+		height = guiControls.height;
 		vel = 0;
 	}
 	else {
 		vel -= g;
 		height += vel;
-		if(height < 0.2) {
-			height = 0.2;
+		if(height < meshscale) { 
+			height = meshscale;
 			vel = 0;
 		}
 	}
 
 	//console.log('X: ' + camY + ", Y: " + camX);
 
-	mesh1.position.y = height;	
+	//mesh1.position.y = height;	
+
+	simulateMaxHeightIndependent();
+	updateGui();
+	mesh1.position.x = x;
+	mesh1.position.y = y;
 
 }
 
