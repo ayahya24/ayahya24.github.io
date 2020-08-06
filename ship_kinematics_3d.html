@@ -39,7 +39,7 @@ var camX, camY;
 
 var height;
 var vel;
-var g = .98/60;
+var g = 9.8;
 var duration = 240;
 
 var meshscale = 0.2;
@@ -51,8 +51,12 @@ animate();
 
 function initialize()
 {
+
 	texLoader = new THREE.TextureLoader();
 
+	///////////////////////////
+	// Setup Scene
+	//////////////////////////
 	scene = new THREE.Scene();
 
 	let skyColor = 0xFFFFFF;
@@ -64,6 +68,10 @@ function initialize()
 				
 	camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 	scene.add(camera);
+
+	//////////////////////////////////////
+	// Setup renderer and window
+	/////////////////////////////////////
 
 	renderer = new THREE.WebGLRenderer({
 		antialias : true,
@@ -139,7 +147,7 @@ function initialize()
 	});
 
 	////////////////////////////////////////////////////////////
-	// setup markerRoots
+	// setup world
 	////////////////////////////////////////////////////////////
 
 	camera.position.z = 3;
@@ -189,14 +197,21 @@ function initialize()
 
 	camControls.update();
 
+	var sun = new THREE.DirectionalLight(0x4f4f4f, 0.5);
+	sun.target.position.set(-5, 0, -3);
+	scene.add(sun);
+	scene.add(sun.target);
+
+
 	guiControls = new function() {
 		this.height = 1;
 		this.distance = 1;
 		this.time = 0;
 		this.playing = false;
 	}
-
+	////////////////////////////////////
 	//Simulation values;
+	//////////////////////////////////////
 	x = 0;
 	y = 0;
 	vi = 0;
@@ -204,8 +219,9 @@ function initialize()
 	theta = 0;
 	simulateMaxHeightIndependent();
 
+	////////////////////////////////////////
 	//Set up GUI with dat.GUI
-
+	///////////////////////////////////////
 	guiControls = new function() {
 		this.height = 1;
 		this.distance = 1;
@@ -216,7 +232,7 @@ function initialize()
 	gui = new dat.GUI();
 	gui.add(guiControls, 'height', 0.2, 4.5);
 	gui.add(guiControls, 'distance', 0, 4.5);
-	gui.add(guiControls, 'time', 0, duration);
+	gui.add(guiControls, 'time', 0, duration).listen();
 	gui.add(guiControls, 'playing');
 	console.log('max: '+gui.__controllers[2].max);
 
@@ -228,6 +244,8 @@ function initialize()
 		console.log('Cannonball mesh: '+Object.keys(object));
 		console.log(object.children[0]);
 		mesh1.geometry = object.children[0].geometry;
+		let grayMat = new THREE.MeshStandardMaterial({color:0xFFFFFF});
+		mesh1.material = grayMat;
 
 	}, (xhr)=>{}, (error)=>{
 		console.log('error!: '+error);
@@ -241,7 +259,7 @@ function simulateMaxHeightIndependent() {
 	vi = guiControls.distance / duration;
 	theta = Math.atan(vj/vi);
 	x = vi*t;
-	y = -g/2*Math.pow(t, 2) + vj*t;
+	y = -g/2*Math.pow(t, 2) + vj*t + meshscale;
 	if(y<meshscale)
 		y = meshscale;
 	if(x>guiControls.distance)
@@ -270,7 +288,10 @@ function update()
 	//console.log('X: ' + camY + ", Y: " + camX);
 
 	//mesh1.position.y = height;	
-
+	if(guiControls.playing) {
+		guiControls.time += 1/60;
+		guiControls.time = guiControls.time % duration;
+	}
 	simulateMaxHeightIndependent();
 	updateGui();
 	mesh1.position.x = x;
