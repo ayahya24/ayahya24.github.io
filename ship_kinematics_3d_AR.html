@@ -227,9 +227,10 @@ function initialize()
 	mesh1.scale.set(meshscale*2, meshscale*2, meshscale*2);
 	console.log(mesh1.scale);
 	mesh1.position.y = height;
+	mesh1.position.z = -zoffset/2;
 
 	mesh2 = mesh1.clone();
-	mesh2.position.set(0, 0, zoffset)
+	mesh2.position.set(0, 0, zoffset/2)
 	markerRoot1.add(mesh2);
 
 	markerRoot1.add( mesh1 );
@@ -335,7 +336,7 @@ function initialize()
 	//Cannon: Create cannon group, set its transformation, then load axle and barrel separately.
 	let cannon = new THREE.Group();
 	cannon.scale.set(meshscale*2, meshscale*2, meshscale*2);
-	cannon.position.set(-meshscale*2, meshscale, 0);
+	cannon.position.set(-meshscale*2, meshscale, zoffset/-2.0);
 	cannon.rotateY(3.1415/2);
 	//Axle
 	modelLoader.load('models/cannon_axle.obj', (object)=>{
@@ -359,7 +360,7 @@ function initialize()
 				let cannon2 = cannon.clone();
 				simulation_2.barrel = cannon2.getObjectByName('barrel1');
 				simulation_2.barrel.name = 'barrel2';
-				cannon2.position.set(-meshscale*2, meshscale, zoffset);
+				cannon2.position.set(-meshscale*2, meshscale, zoffset/2);
 				markerRoot1.add(cannon2);
 			});
 
