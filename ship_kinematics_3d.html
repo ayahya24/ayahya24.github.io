@@ -27,7 +27,7 @@ var guiControls, gui;
 
 var texLoader, modelLoader;
 
-var ground, mesh1, markerRoot1;
+var ground, mesh1, markerRoot1, barrel;
 
 var pressed, mouseDeltaX, mouseDeltaY;
 
@@ -198,10 +198,12 @@ function initialize()
 
 	camControls.update();
 
-	var sun = new THREE.DirectionalLight(0x4f4f4f, 3);
+	var sun = new THREE.DirectionalLight(0x4f4f4f, 4.5);
 	sun.target.position.set(-5, 0, -3);
 	scene.add(sun);
 	scene.add(sun.target);
+	var ambient = new THREE.AmbientLight(0xFFFFFF, 0.6);
+	scene.add(ambient);
 
 
 	guiControls = new function() {
@@ -210,6 +212,7 @@ function initialize()
 		this.time = 0;
 		this.playing = true;
 	}
+	barrel = null;
 	////////////////////////////////////
 	//Simulation values;
 	//////////////////////////////////////
@@ -252,19 +255,29 @@ function initialize()
 	}, (xhr)=>{}, (error)=>{
 		console.log('error!: '+error);
 	});
-	//Cannon
-	modelLoader.load('models/cannon.obj', (object)=>{
-		let cannon = object.children[0];
-		console.log(cannon);
-		cannon.scale.set(meshscale*2, meshscale*2, meshscale*2);
-		cannon.position.set(0, meshscale, 0);
-		cannon.rotateY(3.1415/2);
+	//Cannon: Create cannon group, set its transformation, then load axle and barrel separately.
+	let cannon = new THREE.Group();
+	cannon.scale.set(meshscale*2, meshscale*2, meshscale*2);
+	cannon.position.set(-meshscale*2-.4, meshscale, 0);
+	cannon.rotateY(3.1415/2);
+	//Axle
+	modelLoader.load('models/cannon_axle.obj', (object)=>{
+		let cannonmesh = object.children[0];
 		texLoader.load('images/cannonpalette.png', (texture)=>{
 			console.log(texture);
 			texture.magFilter = THREE.NearestFilter;
-			let cannonMat = new THREE.MeshStandardMaterial({map: texture, roughness:0.75, metalness:0.15});
-			cannon.material = cannonMat;
-			markerRoot1.add(cannon);
+			let cannonMat = new THREE.MeshStandardMaterial({map: texture, roughness:0.8, metalness:0.075});
+			cannonmesh.material = cannonMat;
+
+			modelLoader.load('models/cannon_barrel.obj', (barrel_obj)=>{
+				barrel = barrel_obj.children[0];
+				barrel.material = cannonMat;
+				barrel.rotation.set(-3.1415/4, 0, 0);
+				cannon.add(barrel);
+				cannon.add(cannonmesh);
+				markerRoot1.add(cannon);
+			});
+
 		}, undefined, (err)=>{console.log('Goofed when loading cannon texture')});
 	});
 }
@@ -281,6 +294,10 @@ function simulateMaxHeightIndependent() {
 		y = meshscale;
 	if(x>guiControls.distance)
 		x = guiControls.distance;
+
+	console.log(Math.atan(vj, vi))
+	if(barrel != null)
+		barrel.rotation.set(-Math.atan(vj/vi), 0, 0);
 }
 
 function updateGui() {
