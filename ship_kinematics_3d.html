@@ -52,6 +52,7 @@ var x, y, vi, vj, theta;
 
 var zoffset = -1;
 
+
 initialize();
 animate();
 
@@ -179,7 +180,7 @@ function initialize()
 	
 	mesh1 = new THREE.Mesh( geometry1, material1 );
 	mesh1.scale.set(meshscale*2, meshscale*2, meshscale*2);
-	console.log(mesh1.scale);
+	//console.log(mesh1.scale);
 	mesh1.position.y = height;
 
 	mesh2 = mesh1.clone();
@@ -200,7 +201,7 @@ function initialize()
 		ground = new THREE.Mesh(groundGeom, groundMat);
 		ground.rotateOnAxis(new THREE.Vector3(1, 0, 0), -3.141/2);
 		markerRoot1.add(ground);
-		console.log('Added the boy');
+		//console.log('Added the boy');
 	}, undefined, (err)=>{
 		console.error('Goofed up while loading ground texture');
 	});
@@ -214,6 +215,9 @@ function initialize()
 	var ambient = new THREE.AmbientLight(0xFFFFFF, 0.6);
 	scene.add(ambient);
 
+	////////////////////////////
+	// init gui and simulation data containers
+	////////////////////////////
 
 	guiControls1 = new function() {
 		this.height = 1;
@@ -264,9 +268,9 @@ function initialize()
 	f1.open();
 	f2.open();
 
-	console.log('F1:');
+	//console.log('F1:');
 	Object.keys(f1).forEach((prop)=> console.log(prop));
-	console.log('max: '+f1.__controllers[2].max);
+	//console.log('max: '+f1.__controllers[2].max);
 	//f1.__controllers[3].domElement.hidden = true;
 
 	////////////////////////////////////////////
@@ -296,7 +300,7 @@ function initialize()
 	modelLoader.load('models/cannon_axle.obj', (object)=>{
 		let cannonmesh = object.children[0];
 		texLoader.load('images/cannonpalette.png', (texture)=>{
-			console.log(texture);
+			//console.log(texture);
 			texture.magFilter = THREE.NearestFilter;
 			let cannonMat = new THREE.MeshStandardMaterial({map: texture, roughness:0.8, metalness:0.075});
 			cannonmesh.material = cannonMat;
@@ -319,6 +323,65 @@ function initialize()
 
 		}, undefined, (err)=>{console.log('Goofed when loading cannon texture')});
 	});
+
+	////////////////////////
+	//Setup Measurement markers
+	//////////////////////
+	simulation_1.linex = createLine();
+	simulation_1.liney = createLine();
+	simulation_2.linex = createLine();
+	simulation_2.liney = createLine();
+	simulation_2.linex.position.z = -1;
+	simulation_2.liney.position.z = -1;
+	markerRoot1.add(simulation_1.linex);
+	markerRoot1.add(simulation_1.liney);
+	markerRoot1.add(simulation_2.linex);
+	markerRoot1.add(simulation_2.liney);
+
+	//Labels
+	simulation_1.labelx = createTextSprite('', 'labelx1');
+	markerRoot1.add(simulation_1.labelx.sprite);
+
+	/*let label = createTextSprite('he hee hee hee ehee', 'label_1');
+	label.position.y = 1;
+	markerRoot1.add(label);*/
+}
+
+function createLine() {
+	let lineGeom = new THREE.BufferGeometry();
+	let vertices = []
+	vertices.push(new THREE.Vector3(-2*meshscale, meshscale, 0))
+	vertices.push(new THREE.Vector3(1,0,0))
+	lineGeom.verticesNeedUpdate = true;
+	lineGeom = lineGeom.setFromPoints(vertices);
+	let lineMat = new THREE.LineBasicMaterial({color:"cyan"});
+	let line = new THREE.Line(lineGeom, lineMat);
+	line.geometry.attributes.position.needsUpdate = true;
+	//line.geometry.getAttribute("position").needsUpdate = true;
+	return line;
+}
+
+function createTextSprite(text, id) {
+	//let spriteAlignment = THREE.SpriteAlignment.topLeft;
+	let canvas = document.createElement('canvas');
+	canvas.setAttribute('id', id);
+	let context = canvas.getContext('2d');
+	context.font = "Bold " + 20 + "px Arial";
+	//context.textAlign = "center";
+
+	let metrics = context.measureText(text);
+	let textWidth = metrics.width;
+	context.fillStyle = 'cyan'
+	context.fillText(text, 2, 22);
+
+	let texture = new THREE.Texture(canvas);
+	texture.needsUpdate = true;
+	let spriteMaterial = new THREE.SpriteMaterial({map:texture});
+
+	let sprite = new THREE.Sprite(spriteMaterial);
+	sprite.scale.x = 1.75;
+	//return sprite;
+	return {text: text, context:context, texture:texture, spriteMaterial:spriteMaterial, sprite:sprite};
 }
 
 function simulateMaxHeightIndependent(simulation, guiControls) {
@@ -327,7 +390,7 @@ function simulateMaxHeightIndependent(simulation, guiControls) {
 	simulation.duration = 2*simulation.vj/g;
 	simulation.vi = guiControls.distance / simulation.duration;
 	simulation.theta = Math.atan(simulation.vj/simulation.vi);
-	simulation.x = simulation.vi*t;
+	simulation.x = simulation.vi*t - 2 * meshscale;
 	simulation.y = -g/2*Math.pow(t, 2) + simulation.vj*t + meshscale + heightOffset;
 	if(simulation.y<meshscale)
 		simulation.y = meshscale;
@@ -337,9 +400,52 @@ function simulateMaxHeightIndependent(simulation, guiControls) {
 	//console.log(Math.atan(simulation.vj, simulation.vi))
 	if(simulation.barrel != null) {
 		simulation.barrel.rotation.set(-Math.atan(simulation.vj/simulation.vi), 0, 0);
-		simulation.x -= .7 * Math.cos(simulation.theta)
-		simulation.y += .175 * Math.sin(simulation.theta)
+		//simulation.x -= .7 * Math.cos(simulation.theta)
+		//simulation.y += .175 * Math.sin(simulation.theta)
 	}
+}
+
+
+function updateLines(simulation) {
+	let verticesx = simulation.linex.geometry.attributes.position.array
+	let verticesy = simulation.liney.geometry.attributes.position.array
+	verticesx[3*1+0] = simulation.x
+	verticesx[3*1+1] = meshscale
+	
+	//simulation.linex.geometry.vertices[1].z = 1;
+	//console.log(simulation.linex.geometry.vertices[1]);
+
+	verticesy[3*0+0] = simulation.x
+	verticesy[3*0+1] = simulation.y
+
+	verticesy[3*1+0] = simulation.x
+	verticesy[3*1+1] = meshscale
+
+	/*simulation.liney.geometry.vertices[0].x = simulation.x;
+	simulation.liney.geometry.vertices[0].y = simulation.y;
+
+	simulation.liney.geometry.vertices[0].x = simulation.x;
+	simulation.liney.geometry.vertices[0].y = meshscale;*/
+
+	simulation.liney.geometry.attributes.position.needsUpdate = true;
+	simulation.linex.geometry.attributes.position.needsUpdate = true;
+}
+
+function updateLabels(simulation) {
+	/*markerRoot1.remove(simulation.labelx);
+	simulation.labelx.geometry.dispose();
+	simulation.labelx = createTextSprite(round(simulation.x)+' m', 'labelx1');
+	simulation.labelx.position.x = simulation.x;
+	markerRoot1.add(simulation.labelx);*/
+	simulation.labelx.context.clearRect(0, 0, 400, 100);
+	simulation.labelx.context.fillText(round(simulation.x)+' m', 2, 22);
+	simulation.labelx.sprite.position.x = simulation.x;
+	simulation.labelx.texture.needsUpdate = true;
+}
+
+function round(num) {
+	return Math.round((num + Number.EPSILON) * 1000) / 1000
+	//return num;
 }
 
 function updateGui() {
@@ -370,6 +476,10 @@ function update()
 	mesh2.position.x = simulation_2.x;
 	mesh2.position.y = simulation_2.y;
 
+	updateLines(simulation_1);
+	updateLines(simulation_2);
+
+	updateLabels(simulation_1);
 }
 
 

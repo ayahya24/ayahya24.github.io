@@ -119,7 +119,7 @@ function initialize()
 	function onResize()
 	{
 		arToolkitSource.onResize()	
-		//arToolkitSource.copySizeTo(renderer.domElement)	 //Try removing this
+		arToolkitSource.copySizeTo(renderer.domElement)	 //Try removing this
 		if ( arToolkitContext.arController !== null )
 		{
 			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)	
