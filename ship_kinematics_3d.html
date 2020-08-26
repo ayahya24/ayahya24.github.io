@@ -339,12 +339,22 @@ function initialize()
 	markerRoot1.add(simulation_2.liney);
 
 	//Labels
-	simulation_1.labelx = createTextSprite('', 'labelx1');
-	markerRoot1.add(simulation_1.labelx.sprite);
+	simulation_1.labelx = createTextSprite('yo', 'labelx1');
+	simulation_1.labelx.parent.position.y = meshscale;
+	scene.add(simulation_1.labelx.parent);
+	simulation_1.labely = createTextSprite('yo', 'labely1');
+	simulation_1.labely.parent.position.y = meshscale;
+	scene.add(simulation_1.labely.parent);
 
-	/*let label = createTextSprite('he hee hee hee ehee', 'label_1');
-	label.position.y = 1;
-	markerRoot1.add(label);*/
+	simulation_2.labelx = createTextSprite('yo', 'labelx2');
+	simulation_2.labelx.parent.position.y = meshscale;
+	simulation_2.labelx.parent.position.z = -1;
+	scene.add(simulation_2.labelx.parent);
+	simulation_2.labely = createTextSprite('yo', 'labely2');
+	simulation_2.labely.parent.position.y = meshscale;
+	simulation_2.labely.parent.position.z = -1;
+	scene.add(simulation_2.labely.parent);
+
 }
 
 function createLine() {
@@ -367,21 +377,43 @@ function createTextSprite(text, id) {
 	canvas.setAttribute('id', id);
 	let context = canvas.getContext('2d');
 	context.font = "Bold " + 20 + "px Arial";
-	//context.textAlign = "center";
 
 	let metrics = context.measureText(text);
 	let textWidth = metrics.width;
 	context.fillStyle = 'cyan'
-	context.fillText(text, 2, 22);
+	context.textBaseline = 'middle';
+	context.textAlign = "center";
+	context.fillText(text, canvas.width/2, canvas.height/2);
 
 	let texture = new THREE.Texture(canvas);
 	texture.needsUpdate = true;
-	let spriteMaterial = new THREE.SpriteMaterial({map:texture});
-
+	//texture = new THREE.TextureLoader().load('images/basketball.png');
+	let spriteMaterial = new THREE.SpriteMaterial({map:texture, useScreenCoordinates: false});
+	//spriteMaterial.sizeAttenuation = false;
 	let sprite = new THREE.Sprite(spriteMaterial);
-	sprite.scale.x = 1.75;
+
+	let parent = new THREE.Group();
+	parent.add(sprite);
+	parent.scale.x = 1.75;
 	//return sprite;
-	return {text: text, context:context, texture:texture, spriteMaterial:spriteMaterial, sprite:sprite};
+	return {text: text, canvas:canvas, context:context, texture:texture, spriteMaterial:spriteMaterial, sprite:sprite, parent:parent};
+}
+
+function roundRect(ctx, x, y, w, h, r) 
+{
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+    ctx.fill();
+	ctx.stroke();   
 }
 
 function simulateMaxHeightIndependent(simulation, guiControls) {
@@ -432,15 +464,31 @@ function updateLines(simulation) {
 }
 
 function updateLabels(simulation) {
-	/*markerRoot1.remove(simulation.labelx);
-	simulation.labelx.geometry.dispose();
-	simulation.labelx = createTextSprite(round(simulation.x)+' m', 'labelx1');
-	simulation.labelx.position.x = simulation.x;
-	markerRoot1.add(simulation.labelx);*/
-	simulation.labelx.context.clearRect(0, 0, 400, 100);
-	simulation.labelx.context.fillText(round(simulation.x)+' m', 2, 22);
-	simulation.labelx.sprite.position.x = simulation.x;
+	/*simulation.labelx.context.clearRect(0, 0, simulation.label, 100);
+	simulation.labelx.context.textAlign = "center";
+	simulation.labelx.context.fillText(round(simulation.x)+' m', 4, 22);
+	simulation.labelx.parent.position.x = simulation.x;
+	simulation.labelx.texture.needsUpdate = true;*/
+	let context = simulation.labelx.context;
+	let canvas = simulation.labelx.canvas;
+	context.clearRect(0, 0, 300, 300);
+	context.fillStyle = 'cyan'
+	context.textBaseline = 'middle';
+	context.textAlign = "center";
+	context.fillText(round(simulation.x)+' m', canvas.width/2, canvas.height/2);
+	simulation.labelx.parent.position.x = simulation.x + 2*meshscale;
 	simulation.labelx.texture.needsUpdate = true;
+
+	context = simulation.labely.context;
+	canvas = simulation.labely.canvas;
+	context.clearRect(0, 0, 300, 300);
+	context.fillStyle = 'cyan'
+	context.textBaseline = 'middle';
+	context.textAlign = "center";
+	context.fillText(round(simulation.y)+' m', canvas.width/2, canvas.height/2);
+	simulation.labely.parent.position.y = simulation.y + (meshscale + .1);
+	simulation.labely.parent.position.x = simulation.x;
+	simulation.labely.texture.needsUpdate = true;
 }
 
 function round(num) {
@@ -480,6 +528,7 @@ function update()
 	updateLines(simulation_2);
 
 	updateLabels(simulation_1);
+	updateLabels(simulation_2);
 }
 
 
