@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<title>Hello, AR Cube!</title>
+	<!-- include three.js library -->
+	<!--<script src='js/three.js'></script>-->
+	<!-- include jsartookit -->
+	<!--<script src="js/controls/OrbitControls.js"></script>-->
+	<script src = 'build/dat.gui.js'></script>
+</head>
+
+<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
+
+<!-- 
+  Modified from example created by Lee Stemkoski: https://github.com/stemkoski
+  Based on the AR.js library and examples created by Jerome Etienne: https://github.com/jeromeetienne/AR.js/
+-->
+
+<script type='module'>
+import * as THREE from './build/three.module.js';
+import {OrbitControls} from './js/controls/OrbitControls.js';
+import {OBJLoader} from './js/OBJLoader2.js';
+
+var scene, camera, renderer, clock, deltaTime, totalTime;
+
+var guiControls, gui, f, infof1, infof2;
+
+var texLoader, modelLoader;
+
+var ground, mesh1, mesh2, markerRoot1, barrel;
+
+var pressed, mouseDeltaX, mouseDeltaY;
+
+var spacePressed;
+
+var camControls;
+
+var camX, camY;
+
+var height;
+var vel;
+var g = 9.8;
+var duration = 240;
+
+var simulation = {duration:240}
+
+var meshscale = 0.2;
+var heightOffset = 0;
+
+var x, y, vi, vj, theta;
+
+var zoffset = -1;
+
+
+initialize();
+animate();
+
+function initialize()
+{
+
+	texLoader = new THREE.TextureLoader();
+
+	///////////////////////////
+	// Setup Scene
+	//////////////////////////
+	scene = new THREE.Scene();
+
+	let skyColor = 0xFFFFFF;
+	let fogDensity = 0.05;
+	scene.fog = new THREE.FogExp2(skyColor, fogDensity);
+
+	let ambientLight = new THREE.AmbientLight( 0xcccccc, 0.5 );
+	scene.add( ambientLight );
+				
+	camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+	scene.add(camera);
+
+	//////////////////////////////////////
+	// Setup renderer and window
+	/////////////////////////////////////
+
+	renderer = new THREE.WebGLRenderer({
+		antialias : true,
+		alpha: true
+	});
+	renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.domElement.style.position = 'absolute'
+	renderer.domElement.style.top = '0px'
+	renderer.domElement.style.left = '0px'
+	document.body.appendChild( renderer.domElement );
+
+	clock = new THREE.Clock();
+	deltaTime = 0;
+	totalTime = 0;
+	
+	mouseDeltaX = 0;
+	mouseDeltaY = 0;
+	camX = 0;
+	camY = 0;
+
+	camControls = new OrbitControls(camera, renderer.domElement);
+	camControls.enableDamping = true;
+	camControls.maxDistance = 20;
+	camControls.maxPolarAngle = 3.1415/2-0.03;
+
+	function onMouseDown() {
+		pressed = true;
+	}
+
+	function onMouseUp() {
+		pressed = false;
+	}
+
+	function onKeyDown(e) {
+		if(e.keyCode === 32)
+			spacePressed = true;
+	}
+
+	function onKeyUp(e) {
+		if(e.keyCode === 32)
+			spacePressed = false;
+	}
+
+
+	window.addEventListener('mousedown', ()=>{
+		onMouseDown();
+	});
+	window.addEventListener('mouseup', ()=>{
+		onMouseUp();
+	});
+	window.addEventListener('touchstart', ()=>{
+		onMouseDown();
+	});
+	window.addEventListener('touchend', ()=>{
+		onMouseUp();
+	});
+	window.addEventListener('mousemove', (event)=>{
+		mouseDeltaX = event.movementX;
+		mouseDeltaY = event.movementY;
+
+		camX += mouseDeltaX/window.innerWidth;
+		camY += mouseDeltaY/window.innerHeight;
+		//console.log('OHOHOHO');
+	});
+
+	window.addEventListener('keydown', (event)=>{
+		onKeyDown(event);
+	});
+	
+	window.addEventListener('keyup', (event)=>{
+		onKeyUp(event);
+	});
+
+	////////////////////////////////////////////////////////////
+	// setup world
+	////////////////////////////////////////////////////////////
+
+	camera.position.z = 3;
+	camera.position.y = 1.5;
+
+	// build markerControls
+	markerRoot1 = new THREE.Group();
+	//markerRoot1.position.z = -5;
+	scene.add(markerRoot1);
+	/*let markerControls1 = new THREEx.ArMarkerControls(arToolkitContext, markerRoot1, {
+		type: 'pattern', patternUrl: "data/hiro.patt",
+	})*/
+
+	let groundGeom = new THREE.PlaneGeometry(100, 100);
+	texLoader.load('images/checkerboard-pattern2.jpg', (texture)=>{
+		texture.magFilter = THREE.NearestFilter;
+		texture.wrapS = THREE.RepeatWrapping;
+		texture.wrapT = THREE.RepeatWrapping;
+		texture.repeat.set( 4, 4 );
+		let groundMat = new THREE.MeshBasicMaterial({
+			map:texture
+		});
+		ground = new THREE.Mesh(groundGeom, groundMat);
+		ground.rotateOnAxis(new THREE.Vector3(1, 0, 0), -3.141/2);
+		markerRoot1.add(ground);
+		//console.log('Added the boy');
+	}, undefined, (err)=>{
+		console.error('Goofed up while loading ground texture');
+	});
+
+	camControls.update();
+
+	var sun = new THREE.DirectionalLight(0x4f4f4f, 4.5);
+	sun.target.position.set(-5, 0, -3);
+	scene.add(sun);
+	scene.add(sun.target);
+	var ambient = new THREE.AmbientLight(0xFFFFFF, 0.6);
+	scene.add(ambient);
+
+    let geometry1	= new THREE.CubeGeometry(1,1,1);
+	let material1	= new THREE.MeshNormalMaterial({
+		transparent: true,
+		opacity: 0.5,
+		side: THREE.DoubleSide
+	}); 
+
+	//Add object meshes
+	mesh1 = new THREE.Mesh( geometry1, material1 );
+	mesh1.scale.set(meshscale*2, meshscale*2, meshscale*2);
+	//console.log(mesh1.scale);
+	mesh1.position.y = height;
+
+	mesh2 = mesh1.clone();
+	markerRoot1.add(mesh2);
+
+	markerRoot1.add( mesh1 );
+
+	////////////////////////////
+	// init gui and simulation data containers
+	////////////////////////////
+
+	guiControls = new function() {
+		this.height = 1;
+		this.distance = 1;
+		this.time = 0;
+		this.playing = true;
+	}
+	
+	////////////////////////////////////
+	//Simulation values;
+	//////////////////////////////////////
+	simulation.x = 0;
+	simulation.y = 0;
+	simulation.vi = 0;
+	simulation.vj = 0;
+	simulation.m1 = 1;
+    simulation.m2 = 1;
+    simulation.height = 1.5;
+    simulation.distance = 1.5;
+	simulateMaxHeightIndependent(simulation, guiControls);
+
+	////////////////////////////////////////
+	//Set up GUI with dat.GUI
+	///////////////////////////////////////
+
+	gui = new dat.GUI();
+	f = gui.addFolder('Cannon 1 settings');
+	f.add(guiControls, 'height', 0.2, 4.5);
+	f.add(guiControls, 'distance', 0, 4.5);
+	f.add(guiControls, 'time', 0, simulation.duration).listen();
+	f.add(guiControls, 'playing');
+	f.open();
+
+}
+
+function createLine() {
+	let lineGeom = new THREE.BufferGeometry();
+	let vertices = []
+	vertices.push(new THREE.Vector3(-2*meshscale, meshscale, 0))
+	vertices.push(new THREE.Vector3(1,0,0))
+	lineGeom.verticesNeedUpdate = true;
+	lineGeom = lineGeom.setFromPoints(vertices);
+	let lineMat = new THREE.LineBasicMaterial({color:"cyan"});
+	let line = new THREE.Line(lineGeom, lineMat);
+	line.geometry.attributes.position.needsUpdate = true;
+	//line.geometry.getAttribute("position").needsUpdate = true;
+	return line;
+}
+
+function createTextSprite(text, id) {
+	//let spriteAlignment = THREE.SpriteAlignment.topLeft;
+	let canvas = document.createElement('canvas');
+	canvas.setAttribute('id', id);
+	let context = canvas.getContext('2d');
+	context.font = "Bold " + 20 + "px Arial";
+
+	let metrics = context.measureText(text);
+	let textWidth = metrics.width;
+	context.fillStyle = 'cyan'
+	context.textBaseline = 'middle';
+	context.textAlign = "center";
+	context.fillText(text, canvas.width/2, canvas.height/2);
+
+	let texture = new THREE.Texture(canvas);
+	texture.needsUpdate = true;
+	//texture = new THREE.TextureLoader().load('images/basketball.png');
+	let spriteMaterial = new THREE.SpriteMaterial({map:texture, useScreenCoordinates: false});
+	//spriteMaterial.sizeAttenuation = false;
+	let sprite = new THREE.Sprite(spriteMaterial);
+
+	let parent = new THREE.Group();
+	parent.add(sprite);
+	parent.scale.x = 1.75;
+	//return sprite;
+	return {text: text, canvas:canvas, context:context, texture:texture, spriteMaterial:spriteMaterial, sprite:sprite, parent:parent};
+}
+
+function simulateMaxHeightIndependent(simulation, guiControls) {
+	let t = guiControls.time;
+	/*simulation.vj = Math.sqrt(2*g*guiControls.height);
+	simulation.duration = 2*simulation.vj/g;
+	simulation.vi = guiControls.distance / simulation.duration;
+	simulation.theta = Math.atan(simulation.vj/simulation.vi);
+	simulation.x = simulation.vi*t - 2 * meshscale;
+	simulation.y = -g/2*Math.pow(t, 2) + simulation.vj*t + meshscale + heightOffset;
+	if(simulation.y<meshscale)
+		simulation.y = meshscale;
+	if(simulation.x>guiControls.distance)
+		simulation.x = guiControls.distance;*/
+    //guiControls.duration = 2 * 
+    let fg = g*simulation.m2;
+    let m2 = simulation.m2;
+    let m1 = simulation.m1;
+    let tension = (fg * m1/m2) * m2/(m1+m2);
+    let a = (tension - fg) / g;
+    simulation.y = .5*a*t**2 + simulation.height;
+    simulation.x = .5*a*t**2 + simulation.distance;
+}
+
+
+function updateLines(simulation) {
+	let verticesx = simulation.linex.geometry.attributes.position.array
+	let verticesy = simulation.liney.geometry.attributes.position.array
+	verticesx[3*1+0] = simulation.x
+	verticesx[3*1+1] = meshscale
+	
+	//simulation.linex.geometry.vertices[1].z = 1;
+	//console.log(simulation.linex.geometry.vertices[1]);
+
+	verticesy[3*0+0] = simulation.x
+	verticesy[3*0+1] = simulation.y
+
+	verticesy[3*1+0] = simulation.x
+	verticesy[3*1+1] = meshscale
+
+	/*simulation.liney.geometry.vertices[0].x = simulation.x;
+	simulation.liney.geometry.vertices[0].y = simulation.y;
+
+	simulation.liney.geometry.vertices[0].x = simulation.x;
+	simulation.liney.geometry.vertices[0].y = meshscale;*/
+
+	simulation.liney.geometry.attributes.position.needsUpdate = true;
+	simulation.linex.geometry.attributes.position.needsUpdate = true;
+}
+
+function updateLabels(simulation) {
+	/*simulation.labelx.context.clearRect(0, 0, simulation.label, 100);
+	simulation.labelx.context.textAlign = "center";
+	simulation.labelx.context.fillText(round(simulation.x)+' m', 4, 22);
+	simulation.labelx.parent.position.x = simulation.x;
+	simulation.labelx.texture.needsUpdate = true;*/
+	let context = simulation.labelx.context;
+	let canvas = simulation.labelx.canvas;
+	context.clearRect(0, 0, 300, 300);
+	context.fillStyle = 'cyan'
+	context.textBaseline = 'middle';
+	context.textAlign = "center";
+	context.fillText(round(simulation.x)+' m', canvas.width/2, canvas.height/2);
+	simulation.labelx.parent.position.x = simulation.x + 2*meshscale;
+	simulation.labelx.texture.needsUpdate = true;
+
+	context = simulation.labely.context;
+	canvas = simulation.labely.canvas;
+	context.clearRect(0, 0, 300, 300);
+	context.fillStyle = 'cyan'
+	context.textBaseline = 'middle';
+	context.textAlign = "center";
+	context.fillText(round(simulation.y)+' m', canvas.width/2, canvas.height/2);
+	simulation.labely.parent.position.y = simulation.y + (meshscale + .1);
+	simulation.labely.parent.position.x = simulation.x;
+	simulation.labely.texture.needsUpdate = true;
+}
+
+function round(num) {
+	return Math.round((num + Number.EPSILON) * 1000) / 1000
+	//return num;
+}
+
+function updateGui() {
+	f.__controllers[2].max(simulation.duration);
+}
+
+function update()
+{
+	//console.log('X: ' + camY + ", Y: " + camX);
+
+	//mesh1.position.y = height;	
+	if(guiControls.playing) {
+		guiControls.time += 1/60;
+		guiControls.time = guiControls.time % simulation.duration;
+	}
+
+    simulateMaxHeightIndependent(simulation, guiControls);
+
+    mesh1.position.set(0, simulation.y, 0);
+    mesh2.position.set(-simulation.x, simulation.height, 0);
+}
+
+
+function render()
+{
+	renderer.render( scene, camera );
+}
+
+
+function animate()
+{
+	requestAnimationFrame(animate);
+	deltaTime = clock.getDelta();
+	totalTime += deltaTime;
+	update();
+	camControls.update();
+	render();
+}
+
+</script>
+
+</body>
+</html>
+ 
