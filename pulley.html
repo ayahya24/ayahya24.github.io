@@ -216,8 +216,8 @@ function initialize()
 	////////////////////////////
 
 	guiControls = new function() {
-		this.height = 1;
-		this.distance = 1;
+		this.mass1 = 1;
+		this.mass2 = 1;
 		this.time = 0;
 		this.playing = true;
 	}
@@ -229,10 +229,10 @@ function initialize()
 	simulation.y = 0;
 	simulation.vi = 0;
 	simulation.vj = 0;
-	simulation.m1 = 1;
-    simulation.m2 = 1;
+	//simulation.m1 = 1;
+    //simulation.m2 = 4;
     simulation.height = 1.5;
-    simulation.distance = 1.5;
+    simulation.distance = 2.5;
 	simulateMaxHeightIndependent(simulation, guiControls);
 
 	////////////////////////////////////////
@@ -241,12 +241,30 @@ function initialize()
 
 	gui = new dat.GUI();
 	f = gui.addFolder('Cannon 1 settings');
-	f.add(guiControls, 'height', 0.2, 4.5);
-	f.add(guiControls, 'distance', 0, 4.5);
+	f.add(guiControls, 'mass1', 0.2, 4.5);
+	f.add(guiControls, 'mass2', 0.2, 4.5);
 	f.add(guiControls, 'time', 0, simulation.duration).listen();
 	f.add(guiControls, 'playing');
 	f.open();
 
+
+	////////////////////////////////////////
+	// Labels
+	///////////////////////////////////////
+	//Add lines
+	simulation.linex = createLine();
+	simulation.liney = createLine();
+	markerRoot1.add(simulation.linex);
+	markerRoot1.add(simulation.liney);
+
+
+	///////////////////////////////////////
+	// Models
+	/////////////////////////////////////
+	// Load pulley model
+	modelLoader = new OBJLoader();
+	//modelLoader.load('models/pulley.obj', (object)=>{
+	//TODO: Load pulley model.
 }
 
 function createLine() {
@@ -293,22 +311,17 @@ function createTextSprite(text, id) {
 
 function simulateMaxHeightIndependent(simulation, guiControls) {
 	let t = guiControls.time;
-	/*simulation.vj = Math.sqrt(2*g*guiControls.height);
-	simulation.duration = 2*simulation.vj/g;
-	simulation.vi = guiControls.distance / simulation.duration;
-	simulation.theta = Math.atan(simulation.vj/simulation.vi);
-	simulation.x = simulation.vi*t - 2 * meshscale;
-	simulation.y = -g/2*Math.pow(t, 2) + simulation.vj*t + meshscale + heightOffset;
-	if(simulation.y<meshscale)
-		simulation.y = meshscale;
-	if(simulation.x>guiControls.distance)
-		simulation.x = guiControls.distance;*/
-    //guiControls.duration = 2 * 
-    let fg = g*simulation.m2;
-    let m2 = simulation.m2;
-    let m1 = simulation.m1;
+
+    let m2 = guiControls.mass2;
+    let m1 = guiControls.mass1;
+	let fg = g * m2;
     let tension = (fg * m1/m2) * m2/(m1+m2);
     let a = (tension - fg) / g;
+
+	let v = Math.sqrt(-2*a*simulation.height);
+	simulation.duration = 2*simulation.height / v;
+	//console.log(tension+", "+simulation.duration);
+
     simulation.y = .5*a*t**2 + simulation.height;
     simulation.x = .5*a*t**2 + simulation.distance;
 }
@@ -317,23 +330,19 @@ function simulateMaxHeightIndependent(simulation, guiControls) {
 function updateLines(simulation) {
 	let verticesx = simulation.linex.geometry.attributes.position.array
 	let verticesy = simulation.liney.geometry.attributes.position.array
-	verticesx[3*1+0] = simulation.x
-	verticesx[3*1+1] = meshscale
+	//Multiply the meshscale offset by 3 for all except the vertex in m2 so it doesnt float.
+	verticesx[3*1+0] = -simulation.x
+	verticesx[3*1+1] = simulation.height + meshscale*3;
+
+	verticesx[3*0+0] = 0
+	verticesx[3*0+1] = simulation.height + meshscale * 3;
+
+	verticesy[3*1+0] = 0
+	verticesy[3*1+1] = simulation.height + meshscale *3;
 	
-	//simulation.linex.geometry.vertices[1].z = 1;
-	//console.log(simulation.linex.geometry.vertices[1]);
+	verticesy[3*0+0] = 0
+	verticesy[3*0+1] = simulation.y + meshscale;
 
-	verticesy[3*0+0] = simulation.x
-	verticesy[3*0+1] = simulation.y
-
-	verticesy[3*1+0] = simulation.x
-	verticesy[3*1+1] = meshscale
-
-	/*simulation.liney.geometry.vertices[0].x = simulation.x;
-	simulation.liney.geometry.vertices[0].y = simulation.y;
-
-	simulation.liney.geometry.vertices[0].x = simulation.x;
-	simulation.liney.geometry.vertices[0].y = meshscale;*/
 
 	simulation.liney.geometry.attributes.position.needsUpdate = true;
 	simulation.linex.geometry.attributes.position.needsUpdate = true;
@@ -388,8 +397,11 @@ function update()
 
     simulateMaxHeightIndependent(simulation, guiControls);
 
-    mesh1.position.set(0, simulation.y, 0);
-    mesh2.position.set(-simulation.x, simulation.height, 0);
+    mesh1.position.set(0, simulation.y + meshscale, 0);
+	//Multiply meshscale by 3 so that the 2 masses start at different heights, letting there be room for the pulley.
+    mesh2.position.set(-simulation.x, simulation.height + meshscale*3, 0);
+
+	updateLines(simulation);
 }
 
 
