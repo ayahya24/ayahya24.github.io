@@ -413,9 +413,12 @@ function update()
 
     simulateMaxHeightIndependent(simulation, guiControls);
 
-    mesh1.position.set(0, simulation.y + meshscale, 0);
+    mesh2.position.set(0, simulation.y + meshscale, 0);
+	mesh2.scale.set(meshscale * guiControls.mass2, meshscale, meshscale * guiControls.mass2)
 	//Multiply meshscale by 3 so that the 2 masses start at different heights, letting there be room for the pulley.
-    mesh2.position.set(-simulation.x, simulation.height + meshscale*3, 0);
+    mesh1.position.set(-simulation.x, simulation.height + meshscale*3, 0);
+	mesh1.scale.set(meshscale * guiControls.mass1, meshscale, meshscale * guiControls.mass1)
+	//mesh1.sc
 
 	updateLines(simulation);
 }
