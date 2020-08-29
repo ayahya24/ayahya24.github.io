@@ -211,6 +211,7 @@ function initialize()
 
 	markerRoot1.add( mesh1 );
 
+
 	////////////////////////////
 	// init gui and simulation data containers
 	////////////////////////////
@@ -235,6 +236,12 @@ function initialize()
     simulation.distance = 2.5;
 	simulateMaxHeightIndependent(simulation, guiControls);
 
+	//Add surface plane for m1
+	let shelfPlaneMesh = new THREE.PlaneGeometry(simulation.distance, meshscale*3);
+	let shelfPlane = new THREE.Mesh(shelfPlaneMesh, material1);
+	shelfPlane.position.set(-simulation.distance/2-meshscale*3, simulation.height+meshscale*2);
+	shelfPlane.rotateOnAxis(new THREE.Vector3(1, 0, 0), -3.141/2);
+	markerRoot1.add(shelfPlane);
 	////////////////////////////////////////
 	//Set up GUI with dat.GUI
 	///////////////////////////////////////
@@ -263,7 +270,16 @@ function initialize()
 	/////////////////////////////////////
 	// Load pulley model
 	modelLoader = new OBJLoader();
-	//modelLoader.load('models/pulley.obj', (object)=>{
+	modelLoader.load('models/pulley.obj', (object)=>{
+		texLoader.load('images/pulley-atlas.png', (texture)=>{
+			texture.magFilter = THREE.NearestFilter;
+			let pulleyMaterial = new THREE.MeshStandardMaterial({map:texture});
+			let pulleyMesh = object.children[0];
+			pulleyMesh.material = pulleyMaterial;
+			pulleyMesh.position.y = simulation.height + meshscale * 3;
+			markerRoot1.add(pulleyMesh);
+		});
+	});
 	//TODO: Load pulley model.
 }
 
