@@ -382,7 +382,7 @@ function updateLabels(simulation) {
 	context.fillStyle = 'cyan'
 	context.textBaseline = 'middle';
 	context.textAlign = "center";
-	context.fillText(round(simulation.tension)+' m', canvas.width/2, canvas.height/2);
+	context.fillText('Tension: ' +round(simulation.tension)+' N\nAcceleration: '+round(simulation.a)+' m/s/s', canvas.width/2, canvas.height/2);
 	simulation.labelx.parent.position.x = -simulation.x / 2;
 	simulation.labelx.parent.position.y = simulation.height + meshscale * 4;
 	simulation.labelx.texture.needsUpdate = true;
@@ -395,7 +395,7 @@ function updateLabels(simulation) {
 	context.textAlign = "center";
 	context.fillText(round(simulation.tension)+' m', canvas.width/2, canvas.height/2);
 	simulation.labely.parent.position.y = (simulation.height - simulation.y) / 2 + simulation.y;
-	simulation.labely.parent.position.x = 1;
+	simulation.labely.parent.position.x = .5;
 	simulation.labely.texture.needsUpdate = true;
 }
 
