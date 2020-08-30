@@ -280,7 +280,11 @@ function initialize()
 			markerRoot1.add(pulleyMesh);
 		});
 	});
-	//TODO: Load pulley model.
+	
+	simulation.labelx = createTextSprite('o', 'labelx');
+	simulation.labely = createTextSprite('o', 'labely');
+	markerRoot1.add(simulation.labelx.parent);
+	markerRoot1.add(simulation.labely.parent);
 }
 
 function createLine() {
@@ -336,6 +340,8 @@ function simulateMaxHeightIndependent(simulation, guiControls) {
 
 	let v = Math.sqrt(-2*a*simulation.height);
 	simulation.duration = 2*simulation.height / v;
+	simulation.tension = tension;
+	simulation.a = a;
 	//console.log(tension+", "+simulation.duration);
 
     simulation.y = .5*a*t**2 + simulation.height;
@@ -376,8 +382,9 @@ function updateLabels(simulation) {
 	context.fillStyle = 'cyan'
 	context.textBaseline = 'middle';
 	context.textAlign = "center";
-	context.fillText(round(simulation.x)+' m', canvas.width/2, canvas.height/2);
-	simulation.labelx.parent.position.x = simulation.x + 2*meshscale;
+	context.fillText(round(simulation.tension)+' m', canvas.width/2, canvas.height/2);
+	simulation.labelx.parent.position.x = simulation.x / 2;
+	simulation.labelx.parent.position.y = simulation.height + meshscale * 3;
 	simulation.labelx.texture.needsUpdate = true;
 
 	context = simulation.labely.context;
@@ -386,9 +393,9 @@ function updateLabels(simulation) {
 	context.fillStyle = 'cyan'
 	context.textBaseline = 'middle';
 	context.textAlign = "center";
-	context.fillText(round(simulation.y)+' m', canvas.width/2, canvas.height/2);
-	simulation.labely.parent.position.y = simulation.y + (meshscale + .1);
-	simulation.labely.parent.position.x = simulation.x;
+	context.fillText(round(simulation.tension)+' m', canvas.width/2, canvas.height/2);
+	simulation.labely.parent.position.y = simulation.y / 2;
+	simulation.labely.parent.position.x = 1;
 	simulation.labely.texture.needsUpdate = true;
 }
 
@@ -414,13 +421,14 @@ function update()
     simulateMaxHeightIndependent(simulation, guiControls);
 
     mesh2.position.set(0, simulation.y + meshscale, 0);
-	mesh2.scale.set(meshscale * guiControls.mass2, meshscale, meshscale * guiControls.mass2)
+	mesh2.scale.set(2 * meshscale * guiControls.mass2, 2 * meshscale, 2 * meshscale * guiControls.mass2);
 	//Multiply meshscale by 3 so that the 2 masses start at different heights, letting there be room for the pulley.
     mesh1.position.set(-simulation.x, simulation.height + meshscale*3, 0);
-	mesh1.scale.set(meshscale * guiControls.mass1, meshscale, meshscale * guiControls.mass1)
+	mesh1.scale.set(2 * meshscale * guiControls.mass1, 2 * meshscale, 2 * meshscale * guiControls.mass1);
 	//mesh1.sc
 
 	updateLines(simulation);
+	updateLabels(simulation);
 }
 
 
