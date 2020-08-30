@@ -383,8 +383,8 @@ function updateLabels(simulation) {
 	context.textBaseline = 'middle';
 	context.textAlign = "center";
 	context.fillText(round(simulation.tension)+' m', canvas.width/2, canvas.height/2);
-	simulation.labelx.parent.position.x = simulation.x / 2;
-	simulation.labelx.parent.position.y = simulation.height + meshscale * 3;
+	simulation.labelx.parent.position.x = -simulation.x / 2;
+	simulation.labelx.parent.position.y = simulation.height + meshscale * 4;
 	simulation.labelx.texture.needsUpdate = true;
 
 	context = simulation.labely.context;
@@ -394,7 +394,7 @@ function updateLabels(simulation) {
 	context.textBaseline = 'middle';
 	context.textAlign = "center";
 	context.fillText(round(simulation.tension)+' m', canvas.width/2, canvas.height/2);
-	simulation.labely.parent.position.y = simulation.y / 2;
+	simulation.labely.parent.position.y = (simulation.height - simulation.y) / 2 + simulation.y;
 	simulation.labely.parent.position.x = 1;
 	simulation.labely.texture.needsUpdate = true;
 }
