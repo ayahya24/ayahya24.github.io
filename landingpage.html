@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<head>
+	<title>Physics 206 Demonstrations</title>
+</head>
+<style>
+    body{font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;}
+</style>
+<body>
+    <script>
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if(this.readyState == 4 && this.status == 200) {
+                //document.getElementById("demo").innerHTML = this.responseText;
+                let text = this.responseText;
+                let lines = text.split('\n');
+                lines[0] = "# Physics 206 Augmented Reality Demos"
+                for(let i=0; i<lines.length; i++) {
+                    let line = lines[i];
+                    console.log(line);
+                    if(line.charAt(0)=='#') {
+                        let header = document.createElement('h1');
+                        header.innerHTML = line.substring(2, line.length);
+                        document.body.appendChild(header);
+                    } 
+                    else if(line.charAt(0)=="*") {
+                        let paragraph = document.createElement('p');
+                        let b = document.createElement('b');
+                        b.innerHTML = line.substring(2, line.length-4);
+                        paragraph.appendChild(b);
+                        document.body.appendChild(paragraph);
+                    } 
+                    else if(line.indexOf("https://")==0) {                        
+                        let link = line;
+                        let paragraph = document.createElement('p');
+                        let hyperlink = document.createElement('a');
+                        paragraph.innerHTML = "";
+                        hyperlink.href = link;//TODO add href
+                        hyperlink.innerHTML = link;
+                        paragraph.appendChild(hyperlink);
+                        document.body.appendChild(paragraph);
+                    }
+                    else if(line.indexOf(": ")!=-1){
+                        let delimeter = line.indexOf(': ');
+                        if(line.indexOf(': ') != -1) {
+                            let plaintext = line.substring(0, delimeter);
+                            let link = line.substring(delimeter+2, line.length);
+                            let paragraph = document.createElement('p');
+                            let hyperlink = document.createElement('a');
+                            paragraph.innerHTML = plaintext + ": ";
+                            hyperlink.href = link;//TODO add href
+                            hyperlink.innerHTML = link;
+                            paragraph.appendChild(hyperlink);
+                            document.body.appendChild(paragraph);
+                        }
+                    }
+                    else {
+                        let paragraph = document.createElement('p');
+                        paragraph.innerHTML = line;
+                        document.body.appendChild(paragraph);
+                    }
+                }
+            }
+        }
+        xhttp.open('GET', 'https://raw.githubusercontent.com/ayahya24/ayahya24.github.io/master/README.md', true);
+        xhttp.send();
+    </script>
+</body>
