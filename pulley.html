@@ -238,7 +238,8 @@ function initialize()
 
 	//Add surface plane for m1
 	let shelfPlaneMesh = new THREE.PlaneGeometry(simulation.distance, meshscale*3);
-	let shelfPlane = new THREE.Mesh(shelfPlaneMesh, material1);
+	let planeMat = new THREE.MeshStandardMaterial({color:0xffffff})
+	let shelfPlane = new THREE.Mesh(shelfPlaneMesh, planeMat);
 	shelfPlane.position.set(-simulation.distance/2-meshscale*3, simulation.height+meshscale*2);
 	shelfPlane.rotateOnAxis(new THREE.Vector3(1, 0, 0), -3.141/2);
 	markerRoot1.add(shelfPlane);
@@ -281,10 +282,14 @@ function initialize()
 		});
 	});
 	
-	simulation.labelx = createTextSprite('o', 'labelx');
-	simulation.labely = createTextSprite('o', 'labely');
-	markerRoot1.add(simulation.labelx.parent);
-	markerRoot1.add(simulation.labely.parent);
+	simulation.labelxt = createTextSprite('o', 'labelx');
+	simulation.labelyt = createTextSprite('o', 'labely');
+	simulation.labelxa = createTextSprite('o', 'labelx');
+	simulation.labelya = createTextSprite('o', 'labely');
+	markerRoot1.add(simulation.labelxt.parent);
+	markerRoot1.add(simulation.labelyt.parent);
+	markerRoot1.add(simulation.labelxa.parent);
+	markerRoot1.add(simulation.labelya.parent);
 }
 
 function createLine() {
@@ -376,27 +381,54 @@ function updateLabels(simulation) {
 	simulation.labelx.context.fillText(round(simulation.x)+' m', 4, 22);
 	simulation.labelx.parent.position.x = simulation.x;
 	simulation.labelx.texture.needsUpdate = true;*/
-	let context = simulation.labelx.context;
-	let canvas = simulation.labelx.canvas;
+	let tensiontext = 'Tension: ' +round(simulation.tension)+' N';
+	let acctext = 'Acceleration: '+round(simulation.a)+' m/s/s';
+	let context = simulation.labelxt.context;
+	let canvas = simulation.labelxt.canvas;
 	context.clearRect(0, 0, 300, 300);
 	context.fillStyle = 'cyan'
 	context.textBaseline = 'middle';
 	context.textAlign = "center";
-	context.fillText('Tension: ' +round(simulation.tension)+' N\nAcceleration: '+round(simulation.a)+' m/s/s', canvas.width/2, canvas.height/2);
-	simulation.labelx.parent.position.x = -simulation.x / 2;
-	simulation.labelx.parent.position.y = simulation.height + meshscale * 4;
-	simulation.labelx.texture.needsUpdate = true;
+	context.fillText(tensiontext, canvas.width/2, canvas.height/2);
+	simulation.labelxt.parent.position.x = -simulation.x / 2;
+	simulation.labelxt.parent.position.y = simulation.height + meshscale * 4;
+	simulation.labelxt.texture.needsUpdate = true;
 
-	context = simulation.labely.context;
-	canvas = simulation.labely.canvas;
+	context = simulation.labelyt.context;
+	canvas = simulation.labelyt.canvas;
 	context.clearRect(0, 0, 300, 300);
 	context.fillStyle = 'cyan'
 	context.textBaseline = 'middle';
 	context.textAlign = "center";
-	context.fillText(round(simulation.tension)+' m', canvas.width/2, canvas.height/2);
-	simulation.labely.parent.position.y = (simulation.height - simulation.y) / 2 + simulation.y;
-	simulation.labely.parent.position.x = .5;
-	simulation.labely.texture.needsUpdate = true;
+	context.fillText(tensiontext, canvas.width/2, canvas.height/2);
+	simulation.labelyt.parent.position.y = (simulation.height - simulation.y) / 2 + simulation.y;
+	simulation.labelyt.parent.position.x = .5;
+	simulation.labelyt.texture.needsUpdate = true;
+
+	//Acceleration values
+
+	context = simulation.labelxa.context;
+	canvas = simulation.labelxa.canvas;
+	context.clearRect(0, 0, 300, 300);
+	context.fillStyle = 'cyan'
+	context.textBaseline = 'middle';
+	context.textAlign = "center";
+	context.fillText(acctext, canvas.width/2, canvas.height/2);
+	simulation.labelxa.parent.position.x = -simulation.x / 2;
+	simulation.labelxa.parent.position.y = simulation.height + meshscale * 4  + .15;
+	simulation.labelxa.texture.needsUpdate = true;
+
+	context = simulation.labelya.context;
+	canvas = simulation.labelya.canvas;
+	context.clearRect(0, 0, 300, 300);
+	context.fillStyle = 'cyan'
+	context.textBaseline = 'middle';
+	context.textAlign = "center";
+	context.fillText(acctext, canvas.width/2, canvas.height/2);
+	simulation.labelya.parent.position.y = (simulation.height - simulation.y) / 2 + simulation.y + .15;
+	simulation.labelya.parent.position.x = .5;
+	simulation.labelya.texture.needsUpdate = true;
+	
 }
 
 function round(num) {
