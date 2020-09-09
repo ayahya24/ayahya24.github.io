@@ -233,7 +233,7 @@ function initialize()
     simulation.gap = 3;
 	//simulation.m1 = 1;
     //simulation.m2 = 4;
-	simulateMaxHeightIndependent(simulation, guiControls);
+	simulateInelastic(simulation, guiControls);
 
 	//Add surface plane for m1
 	/*let shelfPlaneMesh = new THREE.PlaneGeometry(simulation.distance, meshscale*3);
@@ -446,7 +446,7 @@ function update()
 		guiControls.time = guiControls.time % simulation.duration;
 	}
 
-    simulateMaxHeightIndependent(simulation, guiControls);
+    simulateInelastic(simulation, guiControls);
 
     mesh1.position.set(simulation.x1, meshscale, 0);
 	//Multiply meshscale by 3 so that the 2 masses start at different heights, letting there be room for the pulley.
