@@ -335,7 +335,7 @@ function createTextSprite(text, id) {
 
 function simulateInelastic(simulation, guiControls) {
 	let t = guiControls.time;
-
+	let gap = simulation.gap;
     let collides = t * (simulation.vi1 + simulation.vi2) - gap < 0.001;
     let collisionTime = gap / (simulation.vi1 + simulation.vi2);
     if(!collides) {
