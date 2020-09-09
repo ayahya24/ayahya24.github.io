@@ -345,6 +345,7 @@ function simulateInelastic(simulation, guiControls) {
     if(collides) {
         let momentum = (simulation.vi1*simulation.m1) + (simulation.vi2*simulation.m2);
         simulation.x1 = -(gap/2) + (collisionTime) * simulation.vi1 + (t-collisionTime) * momentum / simulation.m1; // Add the velocity times time pre collision plus velocity times time post collision for new velocity
+		simulation.x2 = (gap/2) + (collisionTime) * simulation.vi2 + (t-collisionTime) * momentum / simulation.m2;
     }
 }
 
@@ -447,11 +448,9 @@ function update()
 
     simulateMaxHeightIndependent(simulation, guiControls);
 
-    mesh2.position.set(0, simulation.y + meshscale, 0);
-	mesh2.scale.set(2 * meshscale * guiControls.mass2, 2 * meshscale, 2 * meshscale * guiControls.mass2);
+    mesh1.position.set(simulation.x1, meshscale, 0);
 	//Multiply meshscale by 3 so that the 2 masses start at different heights, letting there be room for the pulley.
-    mesh1.position.set(-simulation.x, simulation.height + meshscale*3, 0);
-	mesh1.scale.set(2 * meshscale * guiControls.mass1, 2 * meshscale, 2 * meshscale * guiControls.mass1);
+    mesh2.position.set(simulation.x2, meshscale, 0);
 	//mesh1.sc
 
 	updateLines(simulation);
