@@ -219,6 +219,8 @@ function initialize()
 	guiControls = new function() {
 		this.mass1 = 1;
 		this.mass2 = 1;
+		this.velocity1 = 1;
+		this.velocity2 = -.5;
 		this.time = 0;
 		this.playing = true;
 	}
@@ -228,9 +230,8 @@ function initialize()
 	//////////////////////////////////////
 	simulation.x1 = 0;
 	simulation.x2 = 0;
-	simulation.vi1 = -.5;
-	simulation.vi2 = -.25;
-    simulation.gap = 3;
+	simulation.gap = 3;
+	simulation.duration = 5;
 	//simulation.m1 = 1;
     //simulation.m2 = 4;
 	simulateInelastic(simulation, guiControls);
@@ -250,6 +251,8 @@ function initialize()
 	f = gui.addFolder('Cannon 1 settings');
 	f.add(guiControls, 'mass1', 0.2, 4.5);
 	f.add(guiControls, 'mass2', 0.2, 4.5);
+	f.add(guiControls, 'velocity1', -1.5, 1.5);
+	f.add(guiControls, 'velocity2', -1.5, 1.5);
 	f.add(guiControls, 'time', 0, simulation.duration).listen();
 	f.add(guiControls, 'playing');
 	f.open();
@@ -259,10 +262,19 @@ function initialize()
 	// Labels
 	///////////////////////////////////////
 	//Add lines
-	simulation.linex = createLine();
+	/*simulation.linex = createLine();
 	simulation.liney = createLine();
 	markerRoot1.add(simulation.linex);
 	markerRoot1.add(simulation.liney);
+
+	simulation.labelxt = createTextSprite('o', 'labelx');
+	simulation.labelyt = createTextSprite('o', 'labely');
+	simulation.labelxa = createTextSprite('o', 'labelx');
+	simulation.labelya = createTextSprite('o', 'labely');
+	markerRoot1.add(simulation.labelxt.parent);
+	markerRoot1.add(simulation.labelyt.parent);
+	markerRoot1.add(simulation.labelxa.parent);
+	markerRoot1.add(simulation.labelya.parent);*/
 
 
 	///////////////////////////////////////
@@ -281,14 +293,6 @@ function initialize()
 		});
 	});
 	
-	simulation.labelxt = createTextSprite('o', 'labelx');
-	simulation.labelyt = createTextSprite('o', 'labely');
-	simulation.labelxa = createTextSprite('o', 'labelx');
-	simulation.labelya = createTextSprite('o', 'labely');
-	markerRoot1.add(simulation.labelxt.parent);
-	markerRoot1.add(simulation.labelyt.parent);
-	markerRoot1.add(simulation.labelxa.parent);
-	markerRoot1.add(simulation.labelya.parent);
 }
 
 function createLine() {
@@ -336,17 +340,28 @@ function createTextSprite(text, id) {
 function simulateInelastic(simulation, guiControls) {
 	let t = guiControls.time;
 	let gap = simulation.gap;
-    let collides = t * (simulation.vi1 + simulation.vi2) - gap < 0.001;
-    let collisionTime = gap / (simulation.vi1 + simulation.vi2);
+	let m1 = guiControls.mass1;
+	let m2 = guiControls.mass2;
+	let v1 = guiControls.velocity1;
+	let v2 = guiControls.velocity2;
+	mesh1.scale.z = m1;
+	mesh2.scale.z = m2;
+    let collisionTime = (gap - 2*meshscale) / (v1 - v2);
+	let collides = t >= collisionTime;
+	simulation.duration = collisionTime * 2;
+	//console.log(collisionTime+", "+t);
     if(!collides) {
-        simulation.x1 = -(gap/2) + t * simulation.vi1;
-        simulation.x2 = (gap/2) * t * simulation.vi2;
+        simulation.x1 = -(gap/2) + t * v1;
+        simulation.x2 = (gap/2) + t * v2;
     }
     if(collides) {
-        let momentum = (simulation.vi1*simulation.m1) + (simulation.vi2*simulation.m2);
-        simulation.x1 = -(gap/2) + (collisionTime) * simulation.vi1 + (t-collisionTime) * momentum / simulation.m1; // Add the velocity times time pre collision plus velocity times time post collision for new velocity
-		simulation.x2 = (gap/2) + (collisionTime) * simulation.vi2 + (t-collisionTime) * momentum / simulation.m2;
-    }
+        let momentum = (v1*m1) + (v2*m2);
+        simulation.x1 = -(gap/2) + (collisionTime) * v1 + (t-collisionTime) * momentum / (m1+m2); // Add the velocity times time pre collision plus velocity times time post collision for new velocity
+		simulation.x2 = (gap/2) + (collisionTime) * v2 + (t-collisionTime) * momentum / (m1+m2);
+	}
+	//console.log( (t * (simulation.vi1 + simulation.vi2) - gap) +", "+collides);
+	//console.log(collides);
+	//console.log("---------------------------------------");
 }
 
 
@@ -453,8 +468,8 @@ function update()
     mesh2.position.set(simulation.x2, meshscale, 0);
 	//mesh1.sc
 
-	updateLines(simulation);
-	updateLabels(simulation);
+	//updateLines(simulation);
+	//updateLabels(simulation);
 }
 
 
