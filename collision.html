@@ -344,6 +344,7 @@ function simulateInelastic(simulation, guiControls) {
 	let m2 = guiControls.mass2;
 	let v1 = guiControls.velocity1;
 	let v2 = guiControls.velocity2;
+
 	mesh1.scale.z = m1;
 	mesh2.scale.z = m2;
     let collisionTime = (gap - 2*meshscale) / (v1 - v2);
@@ -362,6 +363,47 @@ function simulateInelastic(simulation, guiControls) {
 	//console.log( (t * (simulation.vi1 + simulation.vi2) - gap) +", "+collides);
 	//console.log(collides);
 	//console.log("---------------------------------------");
+}
+
+function quadratic_eq(a, b, c) {
+	return [(-b+Math.sqrt(b*b-4*a*c))/(2*a), (-b-Math.sqrt(b*b-4*a*c))/(2*a)]
+}
+
+function simulateElastic(simulation, guiControls) {
+	let t = guiControls.time;
+	let gap = simulation.gap;
+	let m1 = guiControls.mass1;
+	let m2 = guiControls.mass2;
+	let v1 = guiControls.velocity1;
+	let v2 = guiControls.velocity2;
+
+	mesh1.scale.z = m1;
+	mesh2.scale.z = m2;
+    let collisionTime = (gap - 2*meshscale) / (v1 - v2);
+	let collides = t >= collisionTime;
+	simulation.duration = collisionTime * 2;
+	//console.log(collisionTime+", "+t);
+	let ke = 0;
+    if(!collides) {
+        simulation.x1 = -(gap/2) + t * v1;
+        simulation.x2 = (gap/2) + t * v2;
+		ke = m1*v1*v1 + m2*v2*v2;
+    }
+    if(collides) {
+        let c = m2 * (v1-v2)*(v1-v2) - (m1*v1*v1 + m2*v2*v2);
+		let b = 2*m2*(v1-v2);
+		let a = (m1+m2);
+		let v1f = quadratic_eq(a, b, c)[0];
+		let v2f = (v1f+v1) - v2;
+		//console.log(a+", "+ b+", "+ c);
+		//console.log(v1f+", "+v2f);
+
+		simulation.x1 = -(gap/2) + (collisionTime) * v1 + (t-collisionTime) * v1f; // Add the velocity times time pre collision plus velocity times time post collision for new velocity
+		simulation.x2 = (gap/2) + (collisionTime) * v2 + (t-collisionTime) *v2f;
+
+		ke = m1*v1f*v1f + m2*v2f*v2f;
+	}
+	console.log(ke);
 }
 
 
@@ -461,7 +503,8 @@ function update()
 		guiControls.time = guiControls.time % simulation.duration;
 	}
 
-    simulateInelastic(simulation, guiControls);
+    //simulateInelastic(simulation, guiControls);
+	simulateElastic(simulation, guiControls);
 
     mesh1.position.set(simulation.x1, meshscale, 0);
 	//Multiply meshscale by 3 so that the 2 masses start at different heights, letting there be room for the pulley.
