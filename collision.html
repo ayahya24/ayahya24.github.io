@@ -223,6 +223,7 @@ function initialize()
 		this.velocity2 = -.5;
 		this.time = 0;
 		this.playing = true;
+		this.elastic = false;
 	}
 	
 	////////////////////////////////////
@@ -254,6 +255,7 @@ function initialize()
 	f.add(guiControls, 'velocity1', -1.5, 1.5);
 	f.add(guiControls, 'velocity2', -1.5, 1.5);
 	f.add(guiControls, 'time', 0, simulation.duration).listen();
+	f.add(guiControls, "elastic");
 	f.add(guiControls, 'playing');
 	f.open();
 
@@ -347,6 +349,11 @@ function simulateInelastic(simulation, guiControls) {
 
 	mesh1.scale.z = m1;
 	mesh2.scale.z = m2;
+	mesh1.scale.y = m1;
+	mesh1.position.y = m1 * meshscale;
+	mesh2.scale.y = m2;
+	mesh2.position.y = m2 * meshscale;
+
     let collisionTime = (gap - 2*meshscale) / (v1 - v2);
 	let collides = t >= collisionTime;
 	simulation.duration = collisionTime * 2;
@@ -379,6 +386,11 @@ function simulateElastic(simulation, guiControls) {
 
 	mesh1.scale.z = m1;
 	mesh2.scale.z = m2;
+	mesh1.scale.y = m1;
+	mesh1.position.y = m1 * meshscale;
+	mesh2.scale.y = m2;
+	mesh2.position.y = m2 * meshscale;
+	
     let collisionTime = (gap - 2*meshscale) / (v1 - v2);
 	let collides = t >= collisionTime;
 	simulation.duration = collisionTime * 2;
@@ -390,10 +402,11 @@ function simulateElastic(simulation, guiControls) {
 		ke = m1*v1*v1 + m2*v2*v2;
     }
     if(collides) {
-        let c = m2 * (v1-v2)*(v1-v2) - (m1*v1*v1 + m2*v2*v2);
+        /*let c = m2 * (v1-v2)*(v1-v2) - (m1*v1*v1 + m2*v2*v2);
 		let b = 2*m2*(v1-v2);
 		let a = (m1+m2);
-		let v1f = quadratic_eq(a, b, c)[0];
+		let v1f = quadratic_eq(a, b, c)[0];*/
+		let v1f = (m1*v1+m2*v2-m2*(v1-v2)) / (m1+m2);
 		let v2f = (v1f+v1) - v2;
 		//console.log(a+", "+ b+", "+ c);
 		//console.log(v1f+", "+v2f);
@@ -504,7 +517,10 @@ function update()
 	}
 
     //simulateInelastic(simulation, guiControls);
-	simulateElastic(simulation, guiControls);
+	if(guiControls.elastic)
+		simulateElastic(simulation, guiControls);
+	else 
+		simulateInelastic(simulation, guiControls);
 
     mesh1.position.set(simulation.x1, meshscale, 0);
 	//Multiply meshscale by 3 so that the 2 masses start at different heights, letting there be room for the pulley.
