@@ -249,7 +249,7 @@ function initialize()
 	///////////////////////////////////////
 
 	gui = new dat.GUI();
-	f = gui.addFolder('Cannon 1 settings');
+	f = gui.addFolder('Collision settings');
 	f.add(guiControls, 'mass1', 0.2, 4.5);
 	f.add(guiControls, 'mass2', 0.2, 4.5);
 	f.add(guiControls, 'velocity1', -1.5, 1.5);
@@ -263,37 +263,23 @@ function initialize()
 	////////////////////////////////////////
 	// Labels
 	///////////////////////////////////////
-	//Add lines
-	/*simulation.linex = createLine();
-	simulation.liney = createLine();
-	markerRoot1.add(simulation.linex);
-	markerRoot1.add(simulation.liney);
-
-	simulation.labelxt = createTextSprite('o', 'labelx');
-	simulation.labelyt = createTextSprite('o', 'labely');
-	simulation.labelxa = createTextSprite('o', 'labelx');
-	simulation.labelya = createTextSprite('o', 'labely');
-	markerRoot1.add(simulation.labelxt.parent);
-	markerRoot1.add(simulation.labelyt.parent);
-	markerRoot1.add(simulation.labelxa.parent);
-	markerRoot1.add(simulation.labelya.parent);*/
-
+	simulation.label1v = createTextSprite('o', 'label1');
+	simulation.label1m = createTextSprite('o', 'labely');
+	simulation.label1ke = createTextSprite('o', 'labelx');
+	simulation.label2v = createTextSprite('o', 'label1');
+	simulation.label2m = createTextSprite('o', 'labely');
+	simulation.label2ke = createTextSprite('o', 'labelx');
+	markerRoot1.add(simulation.label1v.parent);
+	markerRoot1.add(simulation.label1m.parent);
+	markerRoot1.add(simulation.label1ke.parent);
+	markerRoot1.add(simulation.label2v.parent);
+	markerRoot1.add(simulation.label2m.parent);
+	markerRoot1.add(simulation.label2ke.parent);
 
 	///////////////////////////////////////
 	// Models
 	/////////////////////////////////////
-	// Load pulley model
-	modelLoader = new OBJLoader();
-	modelLoader.load('models/pulley.obj', (object)=>{
-		texLoader.load('images/pulley-atlas.png', (texture)=>{
-			texture.magFilter = THREE.NearestFilter;
-			let pulleyMaterial = new THREE.MeshStandardMaterial({map:texture});
-			let pulleyMesh = object.children[0];
-			pulleyMesh.material = pulleyMaterial;
-			pulleyMesh.position.y = simulation.height + meshscale * 3;
-			markerRoot1.add(pulleyMesh);
-		});
-	});
+	
 	
 }
 
@@ -347,6 +333,9 @@ function simulateInelastic(simulation, guiControls) {
 	let v1 = guiControls.velocity1;
 	let v2 = guiControls.velocity2;
 
+	simulation.m1 = m1;
+	simulation.m2 = m2;
+
 	mesh1.scale.z = m1;
 	mesh2.scale.z = m2;
 	mesh1.scale.y = m1;
@@ -361,15 +350,28 @@ function simulateInelastic(simulation, guiControls) {
     if(!collides) {
         simulation.x1 = -(gap/2) + t * v1;
         simulation.x2 = (gap/2) + t * v2;
+
+		simulation.momentum1 = m1*v1;
+		simulation.momentum2 = m2*v2;
+		simulation.ke1 = m1*v1*v1/2;
+		simulation.ke2 = m2*v2*v2/2;
+		simulation.v1f = v1;
+		simulation.v2f = v2;
     }
     if(collides) {
         let momentum = (v1*m1) + (v2*m2);
-        simulation.x1 = -(gap/2) + (collisionTime) * v1 + (t-collisionTime) * momentum / (m1+m2); // Add the velocity times time pre collision plus velocity times time post collision for new velocity
-		simulation.x2 = (gap/2) + (collisionTime) * v2 + (t-collisionTime) * momentum / (m1+m2);
+		let v = momentum / (m1+m2)
+        simulation.x1 = -(gap/2) + (collisionTime) * v1 + (t-collisionTime) * v; // Add the velocity times time pre collision plus velocity times time post collision for new velocity
+		simulation.x2 = (gap/2) + (collisionTime) * v2 + (t-collisionTime) * v;
+		
+		simulation.momentum1 = momentum;
+		simulation.momentum2 = momentum;
+		simulation.ke1 = m1*v*v/2;
+		simulation.ke2 = m2*v*v/2;
+		simulation.v1f = v;
+		simulation.v2f = v;
 	}
-	//console.log( (t * (simulation.vi1 + simulation.vi2) - gap) +", "+collides);
-	//console.log(collides);
-	//console.log("---------------------------------------");
+	simulation.collides = collides;
 }
 
 function quadratic_eq(a, b, c) {
@@ -383,6 +385,9 @@ function simulateElastic(simulation, guiControls) {
 	let m2 = guiControls.mass2;
 	let v1 = guiControls.velocity1;
 	let v2 = guiControls.velocity2;
+
+	simulation.m1 = m1;
+	simulation.m2 = m2;
 
 	mesh1.scale.z = m1;
 	mesh2.scale.z = m2;
@@ -400,6 +405,13 @@ function simulateElastic(simulation, guiControls) {
         simulation.x1 = -(gap/2) + t * v1;
         simulation.x2 = (gap/2) + t * v2;
 		ke = m1*v1*v1 + m2*v2*v2;
+
+		simulation.momentum1 = m1*v1;
+		simulation.momentum2 = m2*v2;
+		simulation.ke1 = m1*v1*v1/2;
+		simulation.ke2 = m2*v2*v2/2;
+		simulation.v1f = v1;
+		simulation.v2f = v2;
     }
     if(collides) {
         /*let c = m2 * (v1-v2)*(v1-v2) - (m1*v1*v1 + m2*v2*v2);
@@ -415,8 +427,16 @@ function simulateElastic(simulation, guiControls) {
 		simulation.x2 = (gap/2) + (collisionTime) * v2 + (t-collisionTime) *v2f;
 
 		ke = m1*v1f*v1f + m2*v2f*v2f;
+
+		simulation.momentum1 = m1*v1f;
+		simulation.momentum2 = m2*v2f;
+		simulation.ke1 = m1*v1f*v1f/2;
+		simulation.ke2 = m2*v2f*v2f/2;
+		simulation.v1f = v1f;
+		simulation.v2f = v2f;
 	}
-	console.log(ke);
+	//console.log(ke);
+	simulation.collides = collides;
 }
 
 
@@ -441,60 +461,72 @@ function updateLines(simulation) {
 	simulation.linex.geometry.attributes.position.needsUpdate = true;
 }
 
+function redrawLabel(text, label) {
+	let context = label.context;
+	let canvas = label.canvas;
+	context.clearRect(0, 0, 300, 300);
+	context.fillStyle = 'cyan'
+	context.textBaseline = 'middle';
+	context.textAlign = "center";
+	context.fillText(text, canvas.width/2, canvas.height/2);
+	label.texture.needsUpdate = true;
+}
+
 function updateLabels(simulation) {
-	/*simulation.labelx.context.clearRect(0, 0, simulation.label, 100);
-	simulation.labelx.context.textAlign = "center";
-	simulation.labelx.context.fillText(round(simulation.x)+' m', 4, 22);
-	simulation.labelx.parent.position.x = simulation.x;
-	simulation.labelx.texture.needsUpdate = true;*/
-	let tensiontext = 'Tension: ' +round(simulation.tension)+' N';
-	let acctext = 'Acceleration: '+round(simulation.a)+' m/s/s';
-	let context = simulation.labelxt.context;
-	let canvas = simulation.labelxt.canvas;
-	context.clearRect(0, 0, 300, 300);
-	context.fillStyle = 'cyan'
-	context.textBaseline = 'middle';
-	context.textAlign = "center";
-	context.fillText(tensiontext, canvas.width/2, canvas.height/2);
-	simulation.labelxt.parent.position.x = -simulation.x / 2;
-	simulation.labelxt.parent.position.y = simulation.height + meshscale * 4;
-	simulation.labelxt.texture.needsUpdate = true;
+	if(!simulation.collides) {
+		let label = simulation.label1v;
+		redrawLabel("Velocity 1: "+simulation.v1f, label);
+		label.parent.position.x = simulation.x1;
+		label.parent.position.y = simulation.m1/2 + meshscale*2;
+		label = simulation.label1m;
+		redrawLabel("Momentum 1: "+simulation.momentum1, label);
+		label.parent.position.x = simulation.x1;
+		label.parent.position.y = simulation.m1/2 + meshscale*3;
+		label = simulation.label1ke;
+		redrawLabel("Kinetic Energy 1: "+simulation.ke1, label);
+		label.parent.position.x = simulation.x1;
+		label.parent.position.y = simulation.m1/2 + meshscale*4;
 
-	context = simulation.labelyt.context;
-	canvas = simulation.labelyt.canvas;
-	context.clearRect(0, 0, 300, 300);
-	context.fillStyle = 'cyan'
-	context.textBaseline = 'middle';
-	context.textAlign = "center";
-	context.fillText(tensiontext, canvas.width/2, canvas.height/2);
-	simulation.labelyt.parent.position.y = (simulation.height - simulation.y) / 2 + simulation.y;
-	simulation.labelyt.parent.position.x = .5;
-	simulation.labelyt.texture.needsUpdate = true;
+		label = simulation.label2v;
+		redrawLabel("Velocity 2: "+simulation.v2f, label);
+		label.parent.position.x = simulation.x2;
+		label.parent.position.y = simulation.m2/2 + meshscale*2;
+		label = simulation.label2m;
+		redrawLabel("Momentum 2: "+simulation.momentum2, label);
+		label.parent.position.x = simulation.x2;
+		label.parent.position.y = simulation.m2/2 + meshscale*3;
+		label = simulation.label2ke;
+		redrawLabel("Kinetic Energy 2: "+simulation.ke2, label);
+		label.parent.position.x = simulation.x2;
+		label.parent.position.y = simulation.m2/2 + meshscale*4;
+	} else {
+		let label = simulation.label1v;
+		redrawLabel("Velocity 1: "+simulation.v1f, label);
+		label.parent.position.x = simulation.x1 - meshscale*2;
+		label.parent.position.y = simulation.m1/2 + meshscale*2;
+		label = simulation.label1m;
+		redrawLabel("Momentum 1: "+simulation.momentum1, label);
+		label.parent.position.x = simulation.x1 - meshscale*2;
+		label.parent.position.y = simulation.m1/2 + meshscale*3;
+		label = simulation.label1ke;
+		redrawLabel("Kinetic Energy 1: "+simulation.ke1, label);
+		label.parent.position.x = simulation.x1 - meshscale*2;
+		label.parent.position.y = simulation.m1/2 + meshscale*4;
 
-	//Acceleration values
+		label = simulation.label2v;
+		redrawLabel("Velocity 2: "+simulation.v2f, label);
+		label.parent.position.x = simulation.x2 + meshscale*2;
+		label.parent.position.y = simulation.m2/2 + meshscale*2;
+		label = simulation.label2m;
+		redrawLabel("Momentum 2: "+simulation.momentum2, label);
+		label.parent.position.x = simulation.x2 + meshscale*2;
+		label.parent.position.y = simulation.m2/2 + meshscale*3;
+		label = simulation.label2ke;
+		redrawLabel("Kinetic Energy 2: "+simulation.ke2, label);
+		label.parent.position.x = simulation.x2 + meshscale*2;
+		label.parent.position.y = simulation.m2/2 + meshscale*4;
+	}
 
-	context = simulation.labelxa.context;
-	canvas = simulation.labelxa.canvas;
-	context.clearRect(0, 0, 300, 300);
-	context.fillStyle = 'cyan'
-	context.textBaseline = 'middle';
-	context.textAlign = "center";
-	context.fillText(acctext, canvas.width/2, canvas.height/2);
-	simulation.labelxa.parent.position.x = -simulation.x / 2;
-	simulation.labelxa.parent.position.y = simulation.height + meshscale * 4  + .15;
-	simulation.labelxa.texture.needsUpdate = true;
-
-	context = simulation.labelya.context;
-	canvas = simulation.labelya.canvas;
-	context.clearRect(0, 0, 300, 300);
-	context.fillStyle = 'cyan'
-	context.textBaseline = 'middle';
-	context.textAlign = "center";
-	context.fillText(acctext, canvas.width/2, canvas.height/2);
-	simulation.labelya.parent.position.y = (simulation.height - simulation.y) / 2 + simulation.y + .15;
-	simulation.labelya.parent.position.x = .5;
-	simulation.labelya.texture.needsUpdate = true;
-	
 }
 
 function round(num) {
@@ -528,7 +560,7 @@ function update()
 	//mesh1.sc
 
 	//updateLines(simulation);
-	//updateLabels(simulation);
+	updateLabels(simulation);
 }
 
 

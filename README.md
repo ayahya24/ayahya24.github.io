@@ -7,8 +7,16 @@ Marker image: https://github.com/ayahya24/ayahya24.github.io/blob/master/markers
 
 # Quick links to demonstrations:  
 **2D Kinematics Cannonball Demo:**  
-In-screen: https://ayahya24.github.io/ship_kinematics_3d  
+In-screen (No camera needed): https://ayahya24.github.io/ship_kinematics_3d  
 AR: https://ayahya24.github.io/ship_kinematics_3d_AR  
   
 Modified from 
 https://github.com/stemkoski/AR-Examples
+
+
+**Pulley demo:**
+In-screen: https://ayahya24.github.io/pulley
+AR: https://ayahya24.github.io/pulley_AR
+
+**Collision demo:**
+In-screen: https://ayahya24.github.io/collision
