@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<title>Hello, AR Cube!</title>
+	<script src='js/three.js'></script>
+	<script src="jsartoolkit5/artoolkit.min.js"></script>
+	<script src="jsartoolkit5/artoolkit.api.js"></script>
+	<!-- include threex.artoolkit -->
+	<script src="threex/threex-artoolkitsource.js"></script>
+	<script src="threex/threex-artoolkitcontext.js"></script>
+	<script src="threex/threex-arbasecontrols.js"></script>
+	<script src="threex/threex-armarkercontrols.js"></script>
+	<script src = 'build/dat.gui.js'></script>
+</head>
+
+<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
+
+<!-- 
+  Modified from example created by Lee Stemkoski: https://github.com/stemkoski
+  Based on the AR.js library and examples created by Jerome Etienne: https://github.com/jeromeetienne/AR.js/
+-->
+
+<script type='module'>
+import * as THREE from './build/three.module.js';
+import {OBJLoader} from './js/OBJLoader2.js';
+
+var scene, camera, renderer, clock, deltaTime, totalTime;
+
+var arToolkitSource, arToolkitContext;
+
+var guiControls, gui, f, infof1, infof2;
+
+var texLoader, modelLoader;
+
+var ground, mesh1, mesh2, markerRoot1, barrel;
+
+var pressed, mouseDeltaX, mouseDeltaY;
+
+var spacePressed;
+
+var camControls;
+
+var camX, camY;
+
+var height;
+var vel;
+var g = 9.8;
+var duration = 240;
+
+var simulation = {duration:240}
+
+var meshscale = 0.2;
+var heightOffset = 0;
+
+var x, y, vi, vj, theta;
+
+var zoffset = -1;
+
+
+initialize();
+animate();
+
+function initialize()
+{
+
+	texLoader = new THREE.TextureLoader();
+
+	///////////////////////////
+	// Setup Scene
+	//////////////////////////
+	scene = new THREE.Scene();
+
+	let skyColor = 0xFFFFFF;
+	let fogDensity = 0.05;
+	scene.fog = new THREE.FogExp2(skyColor, fogDensity);
+
+	let ambientLight = new THREE.AmbientLight( 0xcccccc, 0.5 );
+	scene.add( ambientLight );
+				
+	camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+	scene.add(camera);
+
+	//////////////////////////////////////
+	// Setup renderer and window
+	/////////////////////////////////////
+
+	renderer = new THREE.WebGLRenderer({
+		antialias : true,
+		alpha: true
+	});
+	renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.domElement.style.position = 'absolute'
+	renderer.domElement.style.top = '0px'
+	renderer.domElement.style.left = '0px'
+	document.body.appendChild( renderer.domElement );
+
+	clock = new THREE.Clock();
+	deltaTime = 0;
+	totalTime = 0;
+	
+	mouseDeltaX = 0;
+	mouseDeltaY = 0;
+	camX = 0;
+	camY = 0;
+
+	////////////////////////////////////////////////////////////
+	// setup arToolkitSource
+	////////////////////////////////////////////////////////////
+
+	arToolkitSource = new THREEx.ArToolkitSource({
+		sourceType : 'webcam',
+	});
+
+	function onResize()
+	{
+		arToolkitSource.onResize()	
+		arToolkitSource.copySizeTo(renderer.domElement)	 //Try removing this
+		if ( arToolkitContext.arController !== null )
+		{
+			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)	
+		}	
+	}
+
+	arToolkitSource.init(function onReady(){
+		onResize()
+	});
+
+	function onMouseDown() {
+		pressed = true;
+	}
+
+	function onMouseUp() {
+		pressed = false;
+	}
+
+	function onKeyDown(e) {
+		if(e.keyCode === 32)
+			spacePressed = true;
+	}
+
+	function onKeyUp(e) {
+		if(e.keyCode === 32)
+			spacePressed = false;
+	}
+
+
+	window.addEventListener('mousedown', ()=>{
+		onMouseDown();
+	});
+	window.addEventListener('mouseup', ()=>{
+		onMouseUp();
+	});
+	window.addEventListener('touchstart', ()=>{
+		onMouseDown();
+	});
+	window.addEventListener('touchend', ()=>{
+		onMouseUp();
+	});
+	window.addEventListener('mousemove', (event)=>{
+		mouseDeltaX = event.movementX;
+		mouseDeltaY = event.movementY;
+
+		camX += mouseDeltaX/window.innerWidth;
+		camY += mouseDeltaY/window.innerHeight;
+		//console.log('OHOHOHO');
+	});
+
+	window.addEventListener('keydown', (event)=>{
+		onKeyDown(event);
+	});
+	
+	window.addEventListener('keyup', (event)=>{
+		onKeyUp(event);
+	});
+
+    ////////////////////////////////////////////////////////////
+	// setup arToolkitContext
+	////////////////////////////////////////////////////////////	
+
+	// create atToolkitContext
+	arToolkitContext = new THREEx.ArToolkitContext({
+		cameraParametersUrl: 'data/camera_para.dat',
+		detectionMode: 'mono'
+	});
+	
+	// copy projection matrix to camera when initialization complete
+	arToolkitContext.init( function onCompleted(){
+		camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
+	});
+
+    // build markerControls
+	markerRoot1 = new THREE.Group();
+	//markerRoot1.position.z = -5;
+	scene.add(markerRoot1);
+	let markerControls1 = new THREEx.ArMarkerControls(arToolkitContext, markerRoot1, {
+		type: 'pattern', patternUrl: "data/hiro.patt",
+	})
+
+	var sun = new THREE.DirectionalLight(0x4f4f4f, 4.5);
+	sun.target.position.set(-5, 0, -3);
+	scene.add(sun);
+	scene.add(sun.target);
+	var ambient = new THREE.AmbientLight(0xFFFFFF, 0.6);
+	scene.add(ambient);
+
+    let geometry1	= new THREE.CubeGeometry(1,1,1);
+	let material1	= new THREE.MeshNormalMaterial({
+		transparent: true,
+		opacity: 0.5,
+		side: THREE.DoubleSide
+	}); 	
+
+    init_scene();
+}
+
+function init_scene() {
+    ////////////////////////////////////////////////////////////
+	// setup world
+	////////////////////////////////////////////////////////////
+
+	
+
+	//Add object meshes
+	mesh1 = new THREE.Mesh( geometry1, material1 );
+	mesh1.scale.set(meshscale*2, meshscale*2, meshscale*2);
+	//console.log(mesh1.scale);
+	mesh1.position.y = height;
+
+	mesh2 = mesh1.clone();
+	markerRoot1.add(mesh2);
+
+	markerRoot1.add( mesh1 );
+
+
+	////////////////////////////
+	// init gui and simulation data containers
+	////////////////////////////
+
+	guiControls = new function() {
+		this.mass1 = 1;
+		this.mass2 = 1;
+		this.velocity1 = 1;
+		this.velocity2 = -.5;
+		this.time = 0;
+		this.playing = true;
+		this.elastic = false;
+	}
+	
+	////////////////////////////////////
+	//Simulation values;
+	//////////////////////////////////////
+	simulation.x1 = 0;
+	simulation.x2 = 0;
+	simulation.gap = 3;
+	simulation.duration = 5;
+	//simulation.m1 = 1;
+    //simulation.m2 = 4;
+	simulateInelastic(simulation, guiControls);
+
+	//Add surface plane for m1
+	/*let shelfPlaneMesh = new THREE.PlaneGeometry(simulation.distance, meshscale*3);
+	let planeMat = new THREE.MeshStandardMaterial({color:0xffffff})
+	let shelfPlane = new THREE.Mesh(shelfPlaneMesh, planeMat);
+	shelfPlane.position.set(-simulation.distance/2-meshscale*3, simulation.height+meshscale*2);
+	shelfPlane.rotateOnAxis(new THREE.Vector3(1, 0, 0), -3.141/2);
+	markerRoot1.add(shelfPlane);*/
+	////////////////////////////////////////
+	//Set up GUI with dat.GUI
+	///////////////////////////////////////
+
+	gui = new dat.GUI();
+	f = gui.addFolder('Collision settings');
+	f.add(guiControls, 'mass1', 0.2, 4.5);
+	f.add(guiControls, 'mass2', 0.2, 4.5);
+	f.add(guiControls, 'velocity1', -1.5, 1.5);
+	f.add(guiControls, 'velocity2', -1.5, 1.5);
+	f.add(guiControls, 'time', 0, simulation.duration).listen();
+	f.add(guiControls, "elastic");
+	f.add(guiControls, 'playing');
+	f.open();
+
+
+	////////////////////////////////////////
+	// Labels
+	///////////////////////////////////////
+	simulation.label1v = createTextSprite('o', 'label1');
+	simulation.label1m = createTextSprite('o', 'labely');
+	simulation.label1ke = createTextSprite('o', 'labelx');
+	simulation.label2v = createTextSprite('o', 'label1');
+	simulation.label2m = createTextSprite('o', 'labely');
+	simulation.label2ke = createTextSprite('o', 'labelx');
+	markerRoot1.add(simulation.label1v.parent);
+	markerRoot1.add(simulation.label1m.parent);
+	markerRoot1.add(simulation.label1ke.parent);
+	markerRoot1.add(simulation.label2v.parent);
+	markerRoot1.add(simulation.label2m.parent);
+	markerRoot1.add(simulation.label2ke.parent);
+
+	///////////////////////////////////////
+	// Models
+	/////////////////////////////////////
+}
+
+function createLine() {
+	let lineGeom = new THREE.BufferGeometry();
+	let vertices = []
+	vertices.push(new THREE.Vector3(-2*meshscale, meshscale, 0))
+	vertices.push(new THREE.Vector3(1,0,0))
+	lineGeom.verticesNeedUpdate = true;
+	lineGeom = lineGeom.setFromPoints(vertices);
+	let lineMat = new THREE.LineBasicMaterial({color:"cyan"});
+	let line = new THREE.Line(lineGeom, lineMat);
+	line.geometry.attributes.position.needsUpdate = true;
+	//line.geometry.getAttribute("position").needsUpdate = true;
+	return line;
+}
+
+function createTextSprite(text, id) {
+	//let spriteAlignment = THREE.SpriteAlignment.topLeft;
+	let canvas = document.createElement('canvas');
+	canvas.setAttribute('id', id);
+	let context = canvas.getContext('2d');
+	context.font = "Bold " + 20 + "px Arial";
+
+	let metrics = context.measureText(text);
+	let textWidth = metrics.width;
+	context.fillStyle = 'cyan'
+	context.textBaseline = 'middle';
+	context.textAlign = "center";
+	context.fillText(text, canvas.width/2, canvas.height/2);
+
+	let texture = new THREE.Texture(canvas);
+	texture.needsUpdate = true;
+	//texture = new THREE.TextureLoader().load('images/basketball.png');
+	let spriteMaterial = new THREE.SpriteMaterial({map:texture, useScreenCoordinates: false});
+	//spriteMaterial.sizeAttenuation = false;
+	let sprite = new THREE.Sprite(spriteMaterial);
+
+	let parent = new THREE.Group();
+	parent.add(sprite);
+	parent.scale.x = 1.75;
+	//return sprite;
+	return {text: text, canvas:canvas, context:context, texture:texture, spriteMaterial:spriteMaterial, sprite:sprite, parent:parent};
+}
+
+function simulate(simulation, guiControls) {
+	
+}
+
+function quadratic_eq(a, b, c) {
+	return [(-b+Math.sqrt(b*b-4*a*c))/(2*a), (-b-Math.sqrt(b*b-4*a*c))/(2*a)]
+}
+
+
+function updateLines(simulation) {
+	let verticesx = simulation.linex.geometry.attributes.position.array
+	let verticesy = simulation.liney.geometry.attributes.position.array
+	//Multiply the meshscale offset by 3 for all except the vertex in m2 so it doesnt float.
+	verticesx[3*1+0] = -simulation.x
+	verticesx[3*1+1] = simulation.height + meshscale*3;
+
+	verticesx[3*0+0] = 0
+	verticesx[3*0+1] = simulation.height + meshscale * 3;
+
+	verticesy[3*1+0] = 0
+	verticesy[3*1+1] = simulation.height + meshscale *3;
+	
+	verticesy[3*0+0] = 0
+	verticesy[3*0+1] = simulation.y + meshscale;
+
+
+	simulation.liney.geometry.attributes.position.needsUpdate = true;
+	simulation.linex.geometry.attributes.position.needsUpdate = true;
+}
+
+function redrawLabel(text, label) {
+	let context = label.context;
+	let canvas = label.canvas;
+	context.clearRect(0, 0, 300, 300);
+	context.fillStyle = 'cyan'
+	context.textBaseline = 'middle';
+	context.textAlign = "center";
+	context.fillText(text, canvas.width/2, canvas.height/2);
+	label.texture.needsUpdate = true;
+}
+
+function updateLabels(simulation) {
+
+}
+
+function round(num) {
+	return Math.round((num + Number.EPSILON) * 1000) / 1000
+	//return num;
+}
+
+function updateGui() {
+	f.__controllers[2].max(simulation.duration);
+}
+
+function update()
+{
+	if ( arToolkitSource.ready !== false )
+		arToolkitContext.update( arToolkitSource.domElement );
+
+	//mesh1.position.y = height;	
+	if(guiControls.playing) {
+		guiControls.time += 1/60;
+		guiControls.time = guiControls.time % simulation.duration;
+	}
+
+
+
+	//updateLines(simulation);
+	updateLabels(simulation);
+}
+
+
+function render()
+{
+	renderer.render( scene, camera );
+}
+
+
+function animate()
+{
+	requestAnimationFrame(animate);
+	deltaTime = clock.getDelta();
+	totalTime += deltaTime;
+	update();
+	render();
+}
+
+</script>
+
+</body>
+</html>
+ 

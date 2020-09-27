@@ -476,28 +476,28 @@ function updateLabels(simulation) {
 	if(!simulation.collides) {
 		let label = simulation.label1v;
 		redrawLabel("Velocity 1: "+simulation.v1f, label);
-		label.parent.position.x = simulation.x1;
+		label.parent.position.x = simulation.x1 - meshscale*2;
 		label.parent.position.y = simulation.m1/2 + meshscale*2;
 		label = simulation.label1m;
 		redrawLabel("Momentum 1: "+simulation.momentum1, label);
-		label.parent.position.x = simulation.x1;
+		label.parent.position.x = simulation.x1 - meshscale*2;
 		label.parent.position.y = simulation.m1/2 + meshscale*3;
 		label = simulation.label1ke;
 		redrawLabel("Kinetic Energy 1: "+simulation.ke1, label);
-		label.parent.position.x = simulation.x1;
+		label.parent.position.x = simulation.x1 - meshscale*2;
 		label.parent.position.y = simulation.m1/2 + meshscale*4;
 
 		label = simulation.label2v;
 		redrawLabel("Velocity 2: "+simulation.v2f, label);
-		label.parent.position.x = simulation.x2;
+		label.parent.position.x = simulation.x2 + meshscale*2;
 		label.parent.position.y = simulation.m2/2 + meshscale*2;
 		label = simulation.label2m;
 		redrawLabel("Momentum 2: "+simulation.momentum2, label);
-		label.parent.position.x = simulation.x2;
+		label.parent.position.x = simulation.x2 + meshscale*2;
 		label.parent.position.y = simulation.m2/2 + meshscale*3;
 		label = simulation.label2ke;
 		redrawLabel("Kinetic Energy 2: "+simulation.ke2, label);
-		label.parent.position.x = simulation.x2;
+		label.parent.position.x = simulation.x2 + meshscale*2;
 		label.parent.position.y = simulation.m2/2 + meshscale*4;
 	} else {
 		let label = simulation.label1v;
