@@ -228,8 +228,8 @@ function init_scene() {
 	////////////////////////////////////
 	//Simulation values;
 	//////////////////////////////////////
-	simulation.d1 = 1;
-    simulation.d2 = 3;
+	simulation.d1 = 2;
+    simulation.d2 = 4;
 	simulation.duration = 5;
 	//simulation.m1 = 1;
     //simulation.m2 = 4;
@@ -248,7 +248,7 @@ function init_scene() {
 
 	gui = new dat.GUI();
 	f = gui.addFolder('Collision settings');
-	f.add(guiControls, 'height', 0.2, 4.5);
+	f.add(guiControls, 'height', 0.2, 20);
 	f.add(guiControls, 'radius', 0.2, 4.5);
 	f.add(guiControls, 'time', 0, simulation.duration).listen();
 	f.add(guiControls, 'playing');
@@ -326,29 +326,32 @@ function simulate(simulation, guiControls) {
     let time1 = Math.sqrt(2*height/g);
     let theta = Math.atan2(height, d1);
     let t = guiControls.time;
-    let time2 = 0;
-    let time3=0;
-    if(t>0)
-        time2 = d2/simulation.vx;
-        time3 = time1+time2;
+    let time2 = time1+d2/
+        (Math.sqrt
+            ( (g*Math.cos(theta)*time1)**2+(g*Math.sin(theta)*time1)**2));
+    //console.log(time1, time2);
     if(t<time1) {
         let dy = 1/2*-g*Math.sin(theta)*t**2+height;
         let dx =1/2*g*Math.cos(theta)*t**2;
+        simulation.vy = g*Math.sin(theta)*t;
         simulation.vx = g*Math.cos(theta)*t;
         simulation.x = dx;
         simulation.y = dy;
         //console.log(1);
     }
     else if(t<time2) {
-        let vx = simulation.vx;
-        simulation.x = d1 + vx*(t-time1);
+        simulation.v = Math.sqrt(simulation.vx**2+simulation.vy**2);
+        simulation.x = d1 + simulation.v*(t-time1);
         simulation.y = 0;
         //console.log(2);
     }
-    else if(t<time3){
+    else{
         //console.log(3);
-        let v2 = simulation.vx;
-        let v3 = Math.sqrt(2*(0.5*v2**2-g*2*r));
+        let v2 = simulation.v;
+		let temp = 2*(0.5*v2**2-g*2*r)
+        let v3 = Math.sqrt(temp);
+		if(temp<0)
+			v3=0;
         console.log(v2, v3);
         let a2 = v2/r;
         let a3 = v3/r;
@@ -356,9 +359,10 @@ function simulate(simulation, guiControls) {
         let a = (a3-a2)/(2*dtheta);
         let theta2 = 1/2*a*(t-time2)**2+a2*t;
         simulation.x = r*Math.sin(theta2) + d1 + d2;
-        simulation.y = r*Math.cos(theta2)+r;
+        simulation.y = -r*Math.cos(theta2)+r;
     }
     simulation.y = simulation.y + meshscale;
+    simulation.x -= (d1 + d2 + r)/2;
 }
 
 function quadratic_eq(a, b, c) {
