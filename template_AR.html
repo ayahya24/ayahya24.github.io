@@ -220,43 +220,25 @@ function init_scene() {
 	////////////////////////////////////////////////////////////
 
 	
-
-	//Add object meshes
-	mesh1 = new THREE.Mesh( geometry1, material1 );
-	mesh1.scale.set(meshscale*2, meshscale*2, meshscale*2);
-	//console.log(mesh1.scale);
-	mesh1.position.y = height;
-
-	mesh2 = mesh1.clone();
-	markerRoot1.add(mesh2);
-
-	markerRoot1.add( mesh1 );
-
+	//TODO
+	
 
 	////////////////////////////
 	// init gui and simulation data containers
 	////////////////////////////
 
 	guiControls = new function() {
-		this.mass1 = 1;
-		this.mass2 = 1;
-		this.velocity1 = 1;
-		this.velocity2 = -.5;
 		this.time = 0;
 		this.playing = true;
-		this.elastic = false;
 	}
 	
 	////////////////////////////////////
 	//Simulation values;
 	//////////////////////////////////////
-	simulation.x1 = 0;
-	simulation.x2 = 0;
-	simulation.gap = 3;
 	simulation.duration = 5;
 	//simulation.m1 = 1;
     //simulation.m2 = 4;
-	simulateInelastic(simulation, guiControls);
+	simulate(simulation, guiControls);
 
 	//Add surface plane for m1
 	/*let shelfPlaneMesh = new THREE.PlaneGeometry(simulation.distance, meshscale*3);
@@ -270,13 +252,8 @@ function init_scene() {
 	///////////////////////////////////////
 
 	gui = new dat.GUI();
-	f = gui.addFolder('Collision settings');
-	f.add(guiControls, 'mass1', 0.2, 4.5);
-	f.add(guiControls, 'mass2', 0.2, 4.5);
-	f.add(guiControls, 'velocity1', -1.5, 1.5);
-	f.add(guiControls, 'velocity2', -1.5, 1.5);
+	f = gui.addFolder('Settings');
 	f.add(guiControls, 'time', 0, simulation.duration).listen();
-	f.add(guiControls, "elastic");
 	f.add(guiControls, 'playing');
 	f.open();
 
@@ -284,22 +261,11 @@ function init_scene() {
 	////////////////////////////////////////
 	// Labels
 	///////////////////////////////////////
-	simulation.label1v = createTextSprite('o', 'label1');
-	simulation.label1m = createTextSprite('o', 'labely');
-	simulation.label1ke = createTextSprite('o', 'labelx');
-	simulation.label2v = createTextSprite('o', 'label1');
-	simulation.label2m = createTextSprite('o', 'labely');
-	simulation.label2ke = createTextSprite('o', 'labelx');
-	markerRoot1.add(simulation.label1v.parent);
-	markerRoot1.add(simulation.label1m.parent);
-	markerRoot1.add(simulation.label1ke.parent);
-	markerRoot1.add(simulation.label2v.parent);
-	markerRoot1.add(simulation.label2m.parent);
-	markerRoot1.add(simulation.label2ke.parent);
 
 	///////////////////////////////////////
 	// Models
 	/////////////////////////////////////
+	//TODO
 }
 
 function createLine() {
@@ -345,7 +311,7 @@ function createTextSprite(text, id) {
 }
 
 function simulate(simulation, guiControls) {
-	
+	//TODO
 }
 
 function quadratic_eq(a, b, c) {
@@ -386,7 +352,7 @@ function redrawLabel(text, label) {
 }
 
 function updateLabels(simulation) {
-
+	//TODO
 }
 
 function round(num) {
@@ -409,7 +375,7 @@ function update()
 		guiControls.time = guiControls.time % simulation.duration;
 	}
 
-
+	//TODO
 
 	//updateLines(simulation);
 	updateLabels(simulation);
