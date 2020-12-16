@@ -238,6 +238,9 @@ function init_scene() {
 	simulation.x = 0;
 	simulation.z = 0;
 	simulation.duration = 5;
+	guiControls.radiusi = guiControls.radius;
+	simulation.angular_momentum =  guiControls.angular_velocity * guiControls.radius**2;
+	simulation.theta = 0;
 	//simulation.m1 = 1;
     //simulation.m2 = 4;
 	simulate(simulation, guiControls);
@@ -260,7 +263,7 @@ function init_scene() {
 	guiControls.velocityGui.domElement.style.pointerEvents = "none";
 	guiControls.velocityGui.domElement.style.opacity = 0.5;
 	
-	guiControls.angular_velocityGui = f.add(guiControls, 'angular_velocity', -1.5, 1.5);
+	guiControls.angular_velocityGui = f.add(guiControls, 'angular_velocity', 0, 2);
 	/*guiControls.angular_velocityGui.domElement.style.pointerEvents = "none";
 	guiControls.angular_velocityGui.domElement.style.opacity = 0.5;*/
 	f.add(guiControls, 'radius', 0, 5);
@@ -333,9 +336,13 @@ function createTextSprite(text, id) {
 }
 
 function simulate(simulation, guiControls) {
-	let theta = guiControls.time * guiControls.angular_velocity;
+	simulation.angular_momentum =  guiControls.angular_velocity * guiControls.radiusi**2;
+	let angular_rotation = simulation.angular_momentum / (guiControls.radius**2);
+	//let theta = guiControls.time * (angular_rotation);
+	let theta = simulation.theta + angular_rotation/60;
 	simulation.x = Math.cos(theta)*guiControls.radius;
 	simulation.z = Math.sin(theta) * guiControls.radius;
+	simulation.theta = theta;
 }
 
 function quadratic_eq(a, b, c) {
