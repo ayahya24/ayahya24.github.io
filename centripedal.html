@@ -219,7 +219,7 @@ function init_scene() {
 	////////////////////////////
 
 	guiControls = new function() {
-		this.velocity = 1;
+		this.velocity = 2;
 		this.angular_velocity = 1;
 		this.radius = 1;
 		this.time = 0;
@@ -258,12 +258,12 @@ function init_scene() {
 
 	gui = new dat.GUI();
 	f = gui.addFolder('Simulation settings');
-	guiControls.velocityGui = f.add(guiControls, 'velocity', 0.05, 5);
+	guiControls.velocityGui = f.add(guiControls, 'velocity', -500, 500).listen();
 	guiControls.velocityGuiPE = guiControls.velocityGui.domElement.style.pointerEvents;
 	guiControls.velocityGui.domElement.style.pointerEvents = "none";
 	guiControls.velocityGui.domElement.style.opacity = 0.5;
 	
-	guiControls.angular_velocityGui = f.add(guiControls, 'angular_velocity', 0, 2);
+	guiControls.angular_velocityGui = f.add(guiControls, 'angular_velocity', 0, 10);
 	/*guiControls.angular_velocityGui.domElement.style.pointerEvents = "none";
 	guiControls.angular_velocityGui.domElement.style.opacity = 0.5;*/
 	f.add(guiControls, 'radius', 0, 5);
@@ -338,7 +338,12 @@ function createTextSprite(text, id) {
 function simulate(simulation, guiControls) {
 	simulation.angular_momentum =  guiControls.angular_velocity * guiControls.radiusi**2;
 	let angular_rotation = simulation.angular_momentum / (guiControls.radius**2);
+	if(guiControls.radius==0)
+		angular_rotation = 0; 
 	//let theta = guiControls.time * (angular_rotation);
+	let velocity = angular_rotation*guiControls.radius;
+	console.log(velocity);
+	guiControls.velocity = velocity;
 	let theta = simulation.theta + angular_rotation/60;
 	simulation.x = Math.cos(theta)*guiControls.radius;
 	simulation.z = Math.sin(theta) * guiControls.radius;
@@ -405,7 +410,8 @@ function update()
 		guiControls.time = guiControls.time % simulation.duration;
 	}
 
-	simulate(simulation, guiControls);
+	if(guiControls.playing)
+		simulate(simulation, guiControls);
 
 	mesh1.position.x = simulation.x;
 	mesh1.position.z = simulation.z;
