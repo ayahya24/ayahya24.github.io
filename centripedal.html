@@ -219,17 +219,17 @@ function init_scene() {
 	////////////////////////////
 
 	guiControls = new function() {
-		this.velocity = 2;
-		this.angular_velocity = 1;
+		this.linear_speed = 2;
+		this.angular_speed = 1;
 		this.radius = 1;
 		this.time = 0;
 		this.constant_v = false;
 		this.playing = true;
 
-		this.velocityGui = 0;
-		this.velocityGuiPE = 0;
-		this.angular_velocityGui = 0;
-		this.angular_velocityGuiPE = 0;
+		this.linear_speedGui = 0;
+		this.linear_speedGuiPE = 0;
+		this.angular_speedGui = 0;
+		this.angular_speedGuiPE = 0;
 	}
 	
 	////////////////////////////////////
@@ -239,7 +239,7 @@ function init_scene() {
 	simulation.z = 0;
 	simulation.duration = 5;
 	guiControls.radiusi = guiControls.radius;
-	simulation.angular_momentum =  guiControls.angular_velocity * guiControls.radius**2;
+	simulation.angular_momentum =  guiControls.angular_speed * guiControls.radius**2;
 	simulation.theta = 0;
 	//simulation.m1 = 1;
     //simulation.m2 = 4;
@@ -258,17 +258,18 @@ function init_scene() {
 
 	gui = new dat.GUI();
 	f = gui.addFolder('Simulation settings');
-	guiControls.velocityGui = f.add(guiControls, 'velocity', -500, 500).listen();
-	guiControls.velocityGuiPE = guiControls.velocityGui.domElement.style.pointerEvents;
-	guiControls.velocityGui.domElement.style.pointerEvents = "none";
-	guiControls.velocityGui.domElement.style.opacity = 0.5;
+	guiControls.linear_speedGui = f.add(guiControls, 'linear_speed', -500, 500).listen();
+	guiControls.linear_speedGuiPE = guiControls.linear_speedGui.domElement.style.pointerEvents;
+	guiControls.linear_speedGui.domElement.style.pointerEvents = "none";
+	guiControls.linear_speedGui.domElement.style.opacity = 0.5;
 	
-	guiControls.angular_velocityGui = f.add(guiControls, 'angular_velocity', 0, 10);
-	/*guiControls.angular_velocityGui.domElement.style.pointerEvents = "none";
-	guiControls.angular_velocityGui.domElement.style.opacity = 0.5;*/
+	guiControls.angular_speedGui = f.add(guiControls, 'angular_speed', 0, 10);
+	/*guiControls.angular_speedGui.domElement.style.pointerEvents = "none";
+	guiControls.angular_speedGui.domElement.style.opacity = 0.5;*/
 	f.add(guiControls, 'radius', 0, 5);
 	f.add(guiControls, 'time', 0, simulation.duration).listen();
 	f.add(guiControls, 'playing');
+
 	f.open();
 
 
@@ -336,14 +337,14 @@ function createTextSprite(text, id) {
 }
 
 function simulate(simulation, guiControls) {
-	simulation.angular_momentum =  guiControls.angular_velocity * guiControls.radiusi**2;
+	simulation.angular_momentum =  guiControls.angular_speed * guiControls.radiusi**2;
 	let angular_rotation = simulation.angular_momentum / (guiControls.radius**2);
 	if(guiControls.radius==0)
 		angular_rotation = 0; 
 	//let theta = guiControls.time * (angular_rotation);
-	let velocity = angular_rotation*guiControls.radius;
-	console.log(velocity);
-	guiControls.velocity = velocity;
+	let linear_speed = angular_rotation*guiControls.radius;
+	//console.log(linear_speed);
+	guiControls.linear_speed = linear_speed;
 	let theta = simulation.theta + angular_rotation/60;
 	simulation.x = Math.cos(theta)*guiControls.radius;
 	simulation.z = Math.sin(theta) * guiControls.radius;

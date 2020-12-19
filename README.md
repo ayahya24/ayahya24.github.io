@@ -25,3 +25,7 @@ AR: https://ayahya24.github.io/collision_AR
 **Rollercoaster demo:**
 In-screen: https://ayahya24.github.io/loop
 AR: https://ayahya24.github.io/loop_AR
+
+**Centripedal acceleration demo:**
+In-screen: https://ayahya24.github.io/centripedal
+AR: https://ayahya24.github.io/centripedal_AR
