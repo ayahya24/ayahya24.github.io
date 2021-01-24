@@ -27,7 +27,7 @@ var guiControls, gui, f, infof1, infof2;
 
 var texLoader, modelLoader;
 
-var ground, mesh1, ramp, plane, loop, markerRoot1, barrel, material1;
+var ground, mesh1, mesh2, markerRoot1, barrel;
 
 var pressed, mouseDeltaX, mouseDeltaY;
 
@@ -197,54 +197,54 @@ function init_scene() {
     ////////////////////////////////////////////////////////////
 	// setup world
 	////////////////////////////////////////////////////////////
-    let geometry1	= new THREE.CubeGeometry(1,1,1);
-	material1	= new THREE.MeshNormalMaterial({
+
+	let geometry1	= new THREE.CubeGeometry(1,1,1);
+	let material1	= new THREE.MeshNormalMaterial({
 		transparent: true,
 		opacity: 0.5,
 		side: THREE.DoubleSide
 	}); 	
-	
 
 	//Add object meshes
 	mesh1 = new THREE.Mesh( geometry1, material1 );
 	mesh1.scale.set(meshscale*2, meshscale*2, meshscale*2);
 	//console.log(mesh1.scale);
-	mesh1.position.y = height;
+	mesh1.position.y = meshscale;
 
 	markerRoot1.add( mesh1 );
 
-	let rampGeom = new THREE.PlaneGeometry(1,1.5);
-	ramp = new THREE.Mesh(rampGeom, material1);
-	//ramp.rotateOnAxis(new THREE.Vector3(1, 0, 0), 3.1415/2);
-	plane = new THREE.Mesh(rampGeom, material1);
-	let loopGeom = new THREE.CylinderGeometry(1,1,1.5,8);
-	loop = new THREE.Mesh(loopGeom, material1);
-	loop.name = "loop";
-	loop.rotateOnAxis(new THREE.Vector3(1, 0, 0), 3.1415/2);
-	markerRoot1.add(ramp);
-	markerRoot1.add(plane);
-	markerRoot1.add(loop);
-	console.log(markerRoot1.children);
+
 	////////////////////////////
 	// init gui and simulation data containers
 	////////////////////////////
 
 	guiControls = new function() {
-		this.height = 2;
-        this.radius = 1;
+		this.theta = 0;
+		this.speed = 1;
+		this.current = 0;
 		this.time = 0;
+		this.gap = 3;
 		this.playing = true;
+		this.elastic = false;
 	}
 	
 	////////////////////////////////////
 	//Simulation values;
 	//////////////////////////////////////
-	simulation.d1 = 2;
-    simulation.d2 = 4;
-	simulation.duration = 10;
+	simulation.x = 0;
+	simulation.z = 0;
+	simulation.gap = 3;
+	simulation.duration = 5;
 	//simulation.m1 = 1;
     //simulation.m2 = 4;
+	let rivergeom = new THREE.CubeGeometry(1,1,1);
+	let rivermat = new THREE.MeshStandardMaterial({color:0x0077FF});
+	simulation.rivermesh = new THREE.Mesh(rivergeom, rivermat);
+	simulation.rivermesh.position.set(0, 0, -guiControls.gap/2);
+	markerRoot1.add(simulation.rivermesh);
+	
 	simulate(simulation, guiControls);
+
 
 	//Add surface plane for m1
 	/*let shelfPlaneMesh = new THREE.PlaneGeometry(simulation.distance, meshscale*3);
@@ -259,9 +259,12 @@ function init_scene() {
 
 	gui = new dat.GUI();
 	f = gui.addFolder('Collision settings');
-	f.add(guiControls, 'height', 0.05, 20);
-	f.add(guiControls, 'radius', 0.2, 8.5);
+	f.add(guiControls, 'theta', -3.1415/2, 3.1415/2);
+	f.add(guiControls, 'speed', 0, 10);
+	f.add(guiControls, 'current', 0, 10);
+	f.add(guiControls, 'gap', 1, 5);
 	f.add(guiControls, 'time', 0, simulation.duration).listen();
+	f.add(guiControls, "elastic");
 	f.add(guiControls, 'playing');
 	f.open();
 
@@ -281,10 +284,6 @@ function init_scene() {
 	markerRoot1.add(simulation.label2v.parent);
 	markerRoot1.add(simulation.label2m.parent);
 	markerRoot1.add(simulation.label2ke.parent);*/
-	simulation.label1 = createTextSprite('Mass Velocity KE Gravitational PE', 'label1');
-	markerRoot1.add(simulation.label1.parent);
-	simulation.label2 = createTextSprite('Mass Velocity KE Gravitational PE', 'label2');
-	markerRoot1.add(simulation.label2.parent);
 
 	///////////////////////////////////////
 	// Models
@@ -333,127 +332,15 @@ function createTextSprite(text, id) {
 	return {text: text, canvas:canvas, context:context, texture:texture, spriteMaterial:spriteMaterial, sprite:sprite, parent:parent};
 }
 
-
-function updateGeometries(simulation, guiControls) {
-	//Plane geometries
-	let height = guiControls.height;
-    let r = guiControls.radius;
-    let d1 = simulation.d1;
-    let d2 = simulation.d2;
-    let theta = Math.atan2(height, d1);
-	let radius = guiControls.radius;
-
-	let length = (height**2+d1**2)**0.5;
-	ramp.scale.x = length;
-	//ramp.rotateOnAxis(new THREE.Vector3(0,0,1), -ramp.rotation.z);
-	//ramp.rotateOnAxis(new THREE.Vector3(0,0,1), theta);
-	ramp.rotation.setFromVector3(new THREE.Vector3(Math.PI/2, -theta,0));
-	ramp.position.x = d1/2;
-	ramp.position.y = height/2;
-	
-	plane.scale.x = d2;
-	plane.rotation.setFromVector3(new THREE.Vector3(Math.PI/2, 0, 0));
-	plane.position.x = d1+plane.scale.x/2;
-	plane.position.y = 0.01;
-
-	//markerRoot1.remove(loop);
-	loop.geometry.dispose();
-	loop.geometry = new THREE.CylinderGeometry(radius,radius,1.5,8);
-	loop.position.x = d1+d2;
-	loop.position.y = radius;
-	//markerRoot1.add(loop);
-
-	ramp.position.x -= (d1 + d2 + r)/2;
-	plane.position.x -= (d1 + d2 + r)/2;
-	loop.position.x -= (d1 + d2 + r)/2;
-}
-
 function simulate(simulation, guiControls) {
-	let height = guiControls.height;
-    let r = guiControls.radius;
-    let d1 = simulation.d1;
-    let d2 = simulation.d2;
-    let theta = Math.atan2(height, d1);
-	let time1 = Math.sqrt(2*height/(g*Math.sin(theta)));
-    let t = guiControls.time;
-    let time2 = time1+d2/
-        (Math.sqrt
-            ( (g*Math.cos(theta)*time1)**2+(g*Math.sin(theta)*time1)**2));
+	let t = guiControls.time;
+	let velx = Math.sin(guiControls.theta) * guiControls.speed - guiControls.current;
+	let vely = Math.cos(guiControls.theta) * guiControls.speed;
 	
-    //console.log(time1, time2);
-    if(t<time1) {
-        let dy = 1/2*-g*Math.sin(theta)*t**2+height;
-        let dx =1/2*g*Math.cos(theta)*t**2;
-        simulation.vy = g*Math.sin(theta)*t;
-        simulation.vx = g*Math.cos(theta)*t;
-        simulation.x = dx;
-        simulation.y = dy;
-		simulation.y = simulation.y + meshscale;
-    	simulation.x -= (d1 + d2 + r)/2;
-		simulation.dispv = Math.sqrt(simulation.vx**2+simulation.vy**2);
-        //console.log(dx);
-    }
-    else if(t<time2) {
-        simulation.v = Math.sqrt(simulation.vx**2+simulation.vy**2);
-        simulation.x = d1 + simulation.v*(t-time1);
-        simulation.y = 0;
-		simulation.y = simulation.y + meshscale;
-    	simulation.x -= (d1 + d2 + r)/2;
-        //console.log(2);
-    }
-    else{
-        //console.log(3);
-        let v2 = simulation.v;
-		let temp = 2*(0.5*v2**2-g*2*r)
-        let v3 = Math.sqrt(temp);
-		if(temp<0)
-			v3 = 0;
-		console.log(v3);
-        //console.log(v2, v3);
-        let a2 = v2/r;
-        let a3 = v3/r;
-        let dtheta = Math.PI;
-		if(temp<0) {
-			let h = .5 * v2**2 / g;
-			if(h>r) {
-				dtheta = Math.asin((h-r)/r)+Math.PI/2;
-			}
-			else
-				dtheta = r-Math.asin(h/r);
-		}
-        let a = (a3**2-a2**2)/(2*dtheta);
-		let v = a3;
-		//let pi_t = 2*(Math.PI)/(a2+a3);
-		dtheta = Math.PI;
-		let dtheta_t = 2*(dtheta) / (a2+a3);
-		let t_0 = -a2/a;
-		let phase_time = t-time2;
-		if(phase_time<dtheta_t && phase_time<t_0) {
-		/*if(t-time2>pi2_t/2) {
-			let tmid = Math.PI*2/(a2+a3);
-			let pmid = 1/2*a*tmid**2+a2*tmid
-			let vmid = Math.PI;
-			theta2 = pmid+(1/2*-a*(t-tmid-time2)**2+vmid*(t-tmid-time2));
-			v = -a*(t-tmid-time2)+vmid;
-		}*/
-			let theta2 = 1/2*a*(t-time2)**2+a2*(t-time2);
-        	simulation.x = r*Math.sin(theta2) + d1 + d2;
-        	simulation.y = -r*Math.cos(theta2)+r;
-			simulation.y = simulation.y + meshscale;
-    		simulation.x -= (d1 + d2 + r)/2;
-			simulation.dispv = (a*(t-time2)+a2)*r;
-		}
-		
-		/*if((t-time2)>pi2_t) {
-			theta2 = Math.PI*2+0.01;
-			let fa = a2+2*a*dtheta*2
-			let dt = (t-time2-pi2_t);
-			let vv = (a*dt+a2)*r;
-			simulation.x = d1+d2+v*dt;
-			simulation.y = 0;
-		}*/
-		//console.log(theta2);
-    }
+	simulation.x = velx*t;
+	simulation.z = -vely*t;
+	
+	simulation.duration = guiControls.gap/vely;
 }
 
 function quadratic_eq(a, b, c) {
@@ -485,7 +372,7 @@ function updateLines(simulation) {
 function redrawLabel(text, label) {
 	let context = label.context;
 	let canvas = label.canvas;
-	context.clearRect(0, 0, 400, 400);
+	context.clearRect(0, 0, 300, 300);
 	context.fillStyle = 'cyan'
 	context.textBaseline = 'middle';
 	context.textAlign = "center";
@@ -494,16 +381,7 @@ function redrawLabel(text, label) {
 }
 
 function updateLabels(simulation) {
-	let label = simulation.label1;
-	redrawLabel("Mass: 1, Velocity: "+round(simulation.dispv), label);
-	label.parent.position.x = 0;
-	label.parent.position.y = 2;
-	label.parent.position.z = -2;
-	label = simulation.label2;
-	redrawLabel("KE: " + round(1/2*1*simulation.dispv**2)+", Gravity PE: "+ round(simulation.y*g*1), label);
-	label.parent.position.x = 0;
-	label.parent.position.y = 1;
-	label.parent.position.z = -2;
+
 }
 
 function round(num) {
@@ -523,14 +401,14 @@ function update()
 	if(guiControls.playing) {
 		guiControls.time += 1/60;
 		guiControls.time = guiControls.time % simulation.duration;
+		simulate(simulation, guiControls);
 	}
 
-    simulate(simulation, guiControls);
-    mesh1.position.x = simulation.x;
-    mesh1.position.y = simulation.y;
-
+	mesh1.position.x = simulation.x;
+	mesh1.position.z = simulation.z;
+	simulation.rivermesh.scale.set(10,.2,guiControls.gap);
+	simulation.rivermesh.position.set(0, 0, -guiControls.gap/2);
 	//updateLines(simulation);
-	updateGeometries(simulation, guiControls);
 	updateLabels(simulation);
 }
 
