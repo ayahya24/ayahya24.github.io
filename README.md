@@ -7,8 +7,7 @@ Marker image: https://github.com/ayahya24/ayahya24.github.io/blob/master/markers
 
 # Quick links to demonstrations:  
 **2D Kinematics Cannonball Demo:**  
-In-screen (No camera needed): https://ayahya24.github.io/ship_kinematics_3d  
-AR: https://ayahya24.github.io/ship_kinematics_3d_AR  
+https://ayahya24.github.io/ship_kinematics_info
   
 Modified from 
 https://github.com/stemkoski/AR-Examples
@@ -27,4 +26,4 @@ In-screen: https://ayahya24.github.io/loop
 AR: https://ayahya24.github.io/loop_AR
 
 **Centripedal acceleration demo:**
-https://ayahya.github.io/centripedal_info
+https://ayahya24.github.io/centripedal_info

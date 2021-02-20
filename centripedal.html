@@ -219,7 +219,7 @@ function init_scene() {
 	////////////////////////////
 
 	guiControls = new function() {
-		this.linear_speed = 2;
+		this.linear_speed = "0";
 		this.angular_speed = 1;
 		this.radius = 1;
 		this.time = 0;
@@ -258,7 +258,7 @@ function init_scene() {
 
 	gui = new dat.GUI();
 	f = gui.addFolder('Simulation settings');
-	guiControls.linear_speedGui = f.add(guiControls, 'linear_speed', -500, 500).listen();
+	guiControls.linear_speedGui = f.add(guiControls, 'linear_speed').listen();
 	guiControls.linear_speedGuiPE = guiControls.linear_speedGui.domElement.style.pointerEvents;
 	guiControls.linear_speedGui.domElement.style.pointerEvents = "none";
 	guiControls.linear_speedGui.domElement.style.opacity = 0.5;
@@ -344,7 +344,7 @@ function simulate(simulation, guiControls) {
 	//let theta = guiControls.time * (angular_rotation);
 	let linear_speed = angular_rotation*guiControls.radius;
 	//console.log(linear_speed);
-	guiControls.linear_speed = linear_speed;
+	guiControls.linear_speed = ""+linear_speed;
 	let theta = simulation.theta + angular_rotation/60;
 	simulation.x = Math.cos(theta)*guiControls.radius;
 	simulation.z = Math.sin(theta) * guiControls.radius;

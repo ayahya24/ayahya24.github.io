@@ -219,6 +219,8 @@ function initialize()
 	guiControls = new function() {
 		this.mass1 = 1;
 		this.mass2 = 1;
+		this.acceleration = "";
+		this.tension = "";
 		this.time = 0;
 		this.playing = true;
 	}
@@ -253,6 +255,12 @@ function initialize()
 	f.add(guiControls, 'mass2', 0.2, 4.5);
 	f.add(guiControls, 'time', 0, simulation.duration).listen();
 	f.add(guiControls, 'playing');
+	let accgui = f.add(guiControls, "acceleration").listen();
+	accgui.domElement.style.pointerEvents = "none";
+	accgui.domElement.style.opacity = 0.9;
+	let tensgui = f.add(guiControls, "tension").listen();
+	tensgui.domElement.style.pointerEvents = "none";
+	tensgui.domElement.style.opacity = 0.9;
 	f.open();
 
 
@@ -345,6 +353,8 @@ function simulateMaxHeightIndependent(simulation, guiControls) {
 
 	let v = Math.sqrt(-2*a*simulation.height);
 	simulation.duration = 2*simulation.height / v;
+	guiControls.tension = tension
+	guiControls.acceleration = a;
 	simulation.tension = tension;
 	simulation.a = a;
 	//console.log(tension+", "+simulation.duration);
