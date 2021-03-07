@@ -51,6 +51,8 @@ var x, y, vi, vj, theta;
 
 var zoffset = -1;
 
+var simscale = 10;
+
 
 initialize();
 animate();
@@ -241,6 +243,7 @@ function init_scene() {
 	//////////////////////////////////////
 	simulation.d1 = 2;
     simulation.d2 = 4;
+	simulation.state = 0;
 	simulation.duration = 10;
 	//simulation.m1 = 1;
     //simulation.m2 = 4;
@@ -259,7 +262,7 @@ function init_scene() {
 
 	gui = new dat.GUI();
 	f = gui.addFolder('Collision settings');
-	f.add(guiControls, 'height', 0.05, 20);
+	f.add(guiControls, 'height', 0.00, 20);
 	f.add(guiControls, 'radius', 0.2, 8.5);
 	f.add(guiControls, 'time', 0, simulation.duration).listen();
 	f.add(guiControls, 'playing');
@@ -289,6 +292,14 @@ function init_scene() {
 	///////////////////////////////////////
 	// Models
 	/////////////////////////////////////
+	
+	
+	/////////////////////////////////////
+	// Init for iterative simulation
+	simulation.vx = 0;
+	simulation.vy = 0;
+	simulation.x = 0;
+	simulation.y = guiControls.height;
 }
 
 function createLine() {
@@ -349,7 +360,7 @@ function updateGeometries(simulation, guiControls) {
 	//ramp.rotateOnAxis(new THREE.Vector3(0,0,1), theta);
 	ramp.rotation.setFromVector3(new THREE.Vector3(Math.PI/2, -theta,0));
 	ramp.position.x = d1/2;
-	ramp.position.y = height/2;
+	ramp.position.y = height/2+0.01;
 	
 	plane.scale.x = d2;
 	plane.rotation.setFromVector3(new THREE.Vector3(Math.PI/2, 0, 0));
@@ -366,6 +377,79 @@ function updateGeometries(simulation, guiControls) {
 	ramp.position.x -= (d1 + d2 + r)/2;
 	plane.position.x -= (d1 + d2 + r)/2;
 	loop.position.x -= (d1 + d2 + r)/2;
+}
+
+function simulate2(simulation, guiControls) {
+	let height = guiControls.height*simscale;
+    let r = guiControls.radius*simscale;
+    let d1 = simulation.d1*simscale;
+    let d2 = simulation.d2*simscale;
+    let theta = Math.atan2(height, d1);
+	let time1 = Math.sqrt(2*height/(g*Math.sin(theta)));
+    let t = guiControls.time;
+	
+	let offsetx = -(d1+d2+r)/2;
+	let fg = g/60;
+	
+	
+	let states = 5
+	//console.log(simulation.state);
+	if(simulation.state==0) {
+		simulation.x = offsetx
+		simulation.y = height;
+		simulation.vx = 0;
+		simulation.vy = 0;
+		simulation.state = (simulation.state+1)%states
+	}
+	else if(simulation.state==1) {
+		let gp = fg*Math.sin(theta);
+		let gt = fg*Math.cos(theta);
+		
+		let phi = 3.1415/2-theta;
+		let ax = gt*Math.sin(theta)+gp*Math.sin(phi);
+		let ay = -(gt*Math.cos(theta)+gp*Math.cos(phi));
+		
+		simulation.vx += ax;
+		simulation.vy += ay;
+		
+		simulation.x += simulation.vx;
+		simulation.y += simulation.vy;
+		simulation.y = Math.max(0,simulation.y);
+		
+		if(simulation.x>=d1)
+			simulation.state = (simulation.state+1)%states
+	}
+	else if(simulation.state==2) {
+		let speed = Math.sqrt(simulation.vx*simulation.vx + simulation.vy*simulation.vy);
+		simulation.speed = speed;
+		simulation.x+=speed;
+		//console.log(simulation.x);
+		if(simulation.x>d1+d2+offsetx)
+			simulation.state = (simulation.state+1)%states;
+	}
+	else if(simulation.state==3) {
+		simulation.theta=0.01;
+		//console.log('Speed: '+simulation.speed);
+		simulation.state = (simulation.state+1)%states;
+		simulation.rotstart = simulation.x;
+	}
+	else if(simulation.state==4) {
+		let acc = -fg*Math.sin(simulation.theta);
+		simulation.speed += acc;
+		simulation.theta += (simulation.speed/r);
+		
+		console.log(simulation.theta);
+		
+		//simulation.x = simulation.rotstart+r*Math.sin(simulation.theta);
+		simulation.y = r+r*Math.cos(simulation.theta);
+		if(simulation.theta>=3.1415||simulation.speed<=0) {
+			simulation.state = (simulation.state+1)%states;
+		}
+	}
+	
+	//simulation.x = 0;
+
+	//simulation.y = 0;
 }
 
 function simulate(simulation, guiControls) {
@@ -525,9 +609,9 @@ function update()
 		guiControls.time = guiControls.time % simulation.duration;
 	}
 
-    simulate(simulation, guiControls);
-    mesh1.position.x = simulation.x;
-    mesh1.position.y = simulation.y;
+    simulate2(simulation, guiControls);
+    mesh1.position.x = simulation.x/simscale;
+    mesh1.position.y = simulation.y/simscale;
 
 	//updateLines(simulation);
 	updateGeometries(simulation, guiControls);
